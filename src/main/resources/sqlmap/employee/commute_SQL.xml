@@ -1,0 +1,99 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+  PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+  "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+  
+  <mapper namespace="kr.or.ddit.employee.comnute.mapper.ICommuteMapper">
+  
+  	<select id="getLateCnt" parameterType="kr.or.ddit.comm.security.vo.EmployeeVO" resultType="int">
+  		SELECT 
+			nvl(count(*),0) 
+		FROM 
+			WORK_STATUS
+		WHERE
+			WORK_TYPE = 'WS002'
+		AND 
+			EMP_ID = #{empId}
+		AND 
+			TO_CHAR(WORK_STTS_YMD, 'yyyy') = TO_CHAR(SYSDATE,'yyyy')
+  	
+  	</select>
+  
+  	<select id="getAbsenceCnt" parameterType="kr.or.ddit.comm.security.vo.EmployeeVO" resultType="int">
+  		SELECT 
+			nvl(count(*),0) 
+		FROM 
+			WORK_STATUS
+		WHERE
+			WORK_TYPE = 'WS003'
+		AND 
+			EMP_ID = #{empId}
+		AND 
+			TO_CHAR(WORK_STTS_YMD, 'yyyy') = TO_CHAR(SYSDATE,'yyyy')
+  	</select>
+  	
+  	<select id="gettotalVctCnt" parameterType="kr.or.ddit.comm.security.vo.EmployeeVO" resultType="int">
+  		SELECT 
+			nvl(sum(VCT_CRT_CNT),0) 
+		FROM 
+			VACATION_CREATE_DETAIL
+		WHERE
+			EMP_ID  = #{empId}
+  		
+  	</select>
+  		
+  	<select id="getuseVctCnt" parameterType="kr.or.ddit.comm.security.vo.EmployeeVO" resultType="int">
+  		SELECT
+			nvl(sum(va.VCT_USE_DAY_CNT),0)
+		FROM
+			VACATION_APPLY va, VACATION_APPLY_APPROVAL vaa
+		WHERE 
+			va.VCT_APLY_CD = vaa.VCT_APLY_CD 
+		AND 
+			vaa.VCT_APLY_APR_STTS = 'VAA002'
+		AND
+			va.EMP_ID = #{empId}
+  	</select>
+  	
+  	<select id="getWorkTime" parameterType="kr.or.ddit.comm.security.vo.EmployeeVO" resultType="long">
+  		SELECT 
+			nvl(sum(WORK_TM),0) 
+		FROM
+			WORK_STATUS
+		WHERE 
+			EMP_ID = #{empId}
+		AND 
+			TO_CHAR(WORK_STTS_YMD,'yyyy') = TO_CHAR(SYSDATE,'yyyy')
+  	</select>
+  	<select id="getWorkCnt" parameterType="kr.or.ddit.comm.security.vo.EmployeeVO" resultType="long">
+  		SELECT 
+			count(*)
+		FROM
+			WORK_STATUS
+		WHERE 
+			EMP_ID = #{empId}
+		AND 
+			TO_CHAR(WORK_STTS_YMD,'yyyy') = TO_CHAR(SYSDATE,'yyyy') 
+  	</select>
+  	<select id="getdeptWorkSettingTm" parameterType="kr.or.ddit.comm.security.vo.EmployeeVO" resultType="kr.or.ddit.company.workform.vo.WorkFormVO">
+  		SELECT WORK_FORM_BREAK_BGNG_TM, WORK_FORM_LVRM_TM 
+		FROM WORK_FORM
+		WHERE DEPARTMENT_CD = #{deptCd}
+  	</select>
+  	<select id="getComWorkSettingTm" parameterType="kr.or.ddit.comm.security.vo.EmployeeVO" resultType="kr.or.ddit.company.workform.vo.WorkFormVO">
+  		SELECT DEPARTMENT_CD , CO_CD ,wORK_FORM_BREAK_BGNG_TM, WORK_FORM_LVRM_TM 
+		FROM WORK_FORM
+		WHERE 
+			CO_CD = #{coCd}
+		AND DEPARTMENT_Cd IS NULL
+  	</select>
+  	
+  	<select id="getWorkStatus" resultType="kr.or.ddit.company.work.vo.workStatusVO" parameterType="kr.or.ddit.comm.security.vo.EmployeeVO">
+  		SELECT 
+			 WORK_BGNG_TM, WORK_END_TM 
+		FROM 
+			WORK_STATUS
+		WHERE TO_CHAR(WORK_STTS_YMD, 'yyyy-MM-dd') = TO_CHAR(SYSDATE,'yyyy-MM-dd')
+		AND EMP_ID = #{empId}
+  	</select>
+  </mapper>

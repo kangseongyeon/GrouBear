@@ -1,0 +1,152 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+  PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+  "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+  
+  <mapper namespace="kr.or.ddit.comm.login.mapper.ILoginMapper">
+  
+        <resultMap type="kr.or.ddit.comm.security.vo.EmployeeVO" id="employeeMap">
+	        <id property="empId" column="emp_id"/>
+	        <result property="empId" column="emp_id" />
+	        <result property="coCd" column="co_cd" />
+	        <result property="coNm" column="co_nm" />
+	        <result property="deptCd" column="dept_cd" />
+	        <result property="jbgdCd" column="jbgd_cd" />
+	        <result property="empPw" column="emp_pw" />
+	        <result property="empEmlAddr" column="emp_eml_addr" />
+	        <result property="empNm" column="emp_nm" />
+	        <result property="deptNm" column="dept_nm" />
+	        <result property="teamNm" column="team_nm" />
+	        <result property="jbgdNm" column="jbgd_nm" />
+	        <result property="empNo" column="emp_no" />
+	        <result property="empZip" column="emp_zip" />
+	        <result property="empAddr" column="emp_addr" />
+	        <result property="empDaddr" column="emp_daddr" />
+	        <result property="empTelno" column="emp_telno" />
+	        <result property="empBrdt" column="emp_brdt" />
+	        <result property="empGndr" column="emp_gndr" />
+	        <result property="empNtn" column="emp_ntn" />
+	        <result property="empJncmpYmd" column="emp_jncmp_ymd" />
+	        <result property="empRsgntnYmd" column="emp_rsgntn_ymd" />
+	        <result property="empCrtYmd" column="emp_crt_ymd" />
+	        <result property="empMdfcnYmd" column="emp_mdfcn_ymd" />
+	        <result property="empDelYn" column="emp_del_yn" />
+	        <result property="empAprvYn" column="emp_aprv_yn" />
+         	<result property="enabled" column="enabled" />
+         	<result property="empDlnYn" column="emp_dln_yn" />
+         	<result property="imgFileUrl" column="img_file_url" />
+         	<result property="teamCd" column="team_cd" />
+        	<collection property="menuList" resultMap="menuMap" />   <!-- list를 가져오기 위해 collection 사용 -->
+        	<collection property="authList" resultMap="authMap" />   <!-- list를 가져오기 위해 collection 사용 -->
+      	</resultMap>   
+        
+        
+      	<resultMap type="kr.or.ddit.company.personnelInformation.vo.DepartmentMenuVO" id="menuMap">
+        	<result property="deptCd" column="dept_cd" />
+         	<result property="menuNo" column="menu_no" />
+      	</resultMap>
+  
+      	<resultMap type="kr.or.ddit.comm.security.vo.EmployeeAuthVO" id="authMap">
+         	<result property="authrityNo" column="authrity_no" />
+         	<result property="authrityNm" column="authrity_nm" />
+        	<result property="empId" column="emp_id" />
+      	</resultMap>
+  
+     	<select id="readByUserId" parameterType="String" resultMap="employeeMap">
+			SELECT 
+			    E.EMP_ID AS EMP_ID, 
+			    E.CO_CD AS CO_CD, 
+			    C.CO_NM AS CO_NM, 
+			    E.DEPT_CD AS DEPT_CD, 
+			    E.JBGD_CD AS JBGD_CD, 
+			    E.EMP_PW AS EMP_PW, 
+			    E.EMP_EML_ADDR AS EMP_EML_ADDR, 
+			    D.DEPT_NM AS DEPT_NM, 
+			    T.TEAM_NM AS TEAM_NM, 
+			    J.JBGD_NM AS JBGD_NM,
+			    E.EMP_NM AS EMP_NM, 
+			    E.EMP_NO AS EMP_NO, 
+			    E.EMP_ZIP AS EMP_ZIP, 
+			    E.EMP_ADDR AS EMP_ADDR, 
+			    E.EMP_DADDR AS EMP_DADDR, 
+			    E.EMP_TELNO AS EMP_TELNO,
+			    E.EMP_BRDT AS EMP_BRDT, 
+			    E.EMP_GNDR AS EMP_GNDR, 
+			    E.EMP_NTN AS EMP_NTN, 
+			    E.EMP_JNCMP_YMD AS EMP_JNCMP_YMD, 
+			    E.EMP_RSGNTN_YMD AS EMP_RSGNTN,
+			    E.EMP_CRT_YMD AS EMP_CRT_YMD, 
+			    E.EMP_MDFCN_YMD AS EMP_MDFCN_YMD, 
+			    E.EMP_DEL_YN AS EMP_DEL_YN, 
+			    E.EMP_APRV_YN AS EMP_APRV_YN, 
+			    E.ENABLED AS ENABLED, 
+			    E.TEAM_CD AS TEAM_CD,
+			    E.EMP_DLN_YN AS EMP_DLN_YN, 
+			    E.IMG_FILE_URL AS IMG_FILE_URL, 
+			    AU.AUTHRITY_NM, 
+			    (SELECT menu_nm FROM menu WHERE menu_no = DM.menu_no) AS menuNm
+			FROM EMPLOYEE E 
+				LEFT OUTER JOIN AUTHRITY AU ON E.EMP_ID = AU.EMP_ID
+				LEFT OUTER JOIN COMPANY C ON E.CO_CD = C.CO_CD
+				LEFT OUTER JOIN DEPARTMENT D ON E.DEPT_CD = D.DEPT_CD
+				LEFT OUTER JOIN TEAM T ON E.TEAM_CD = T.TEAM_CD
+				LEFT OUTER JOIN JOBGRADE J ON E.JBGD_CD = J.JBGD_CD
+				LEFT OUTER JOIN DEPARTMENT_MENU DM ON E.DEPT_CD = DM.DEPT_CD
+			WHERE E.EMP_ID = #{userId}
+      	</select>
+      	<select id="loginCheck" parameterType="EmployeeVO" resultType="EmployeeVO">
+         	SELECT 
+            	EMP_ID, CO_CD, DEPT_CD, JBGD_CD, EMP_PW, EMP_EML_ADDR,
+            	EMP_NM, EMP_NO, EMP_ZIP, EMP_ADDR, EMP_DADDR, EMP_TELNO, 
+            	EMP_BRDT, EMP_GNDR, EMP_NTN, EMP_JNCMP_YMD, EMP_RSGNTN_YMD, TEAM_CD,
+            	EMP_CRT_YMD, EMP_MDFCN_YMD, EMP_DEL_YN, EMP_APRV_YN, ENABLED, EMP_DLN_YN,IMG_FILE_URL
+         	FROM EMPLOYEE
+         	where EMP_ID = #{empId}
+        		and EMP_pw = #{empPw}
+        </select>
+		
+		<select id="idchk" parameterType="EmployeeVO" resultType="EmployeeVO">
+			select 
+				emp_id, emp_pw
+			from employee
+			where emp_id = #{empId}
+		</select>     
+   	
+   		<select id="brNoChk" resultType="int" parameterType="CompanyVO">
+   		SELECT 
+   			count(*)
+		FROM COMPANY
+		WHERE co_Brno = #{coBrno}
+   		</select>
+     
+     	<insert id="insertCompany" parameterType="CompanyVO">
+     		INSERT INTO COMPANY
+				(CO_CD, CO_NM, CO_BRNO, CEO_NM, CO_ZIP, CO_ADDR, CO_DADDR, CO_TEL)
+			VALUES
+				(('cp'||seq_co_cd.nextval), #{coNm}, #{coBrno}, #{ceoNm}, #{coZip}, #{coAddr}, #{coDaddr}, #{coTel});
+     	</insert>
+     	
+     	<insert id="insertEmployee" parameterType="EmployeeVO" useGeneratedKeys="true">
+     		<selectKey keyProperty="coCd" resultType="string" order="BEFORE">
+     			SELECT
+     				CO_CD
+				FROM
+					COMPANY
+				WHERE 
+					CEO_NM = #{empNm} AND CO_ZIP = #{empZip} AND CO_TEL = #{empTelno}
+     		</selectKey>
+     		INSERT INTO EMPLOYEE
+				(EMP_ID, CO_CD, EMP_PW, EMP_EML_ADDR, EMP_NM, EMP_ZIP, EMP_ADDR, EMP_DADDR, EMP_TELNO)
+			VALUES
+				(#{empId}, #{coCd}, #{empPw}, #{empEmlAddr}, #{empNm}, #{empZip}, #{empAddr}, #{empDaddr}, #{empTelno})
+     	</insert>
+     	
+     	<insert id="insertAuth" parameterType="EmployeeAuthVO" useGeneratedKeys="true">
+     		<selectKey keyProperty="authrityNo" resultType="int" order="BEFORE">
+				SELECT seq_auth_no.nextval FROM dual
+     		</selectKey>
+     			INSERT INTO AUTHRITY
+				(AUTHRITY_NO, AUTHRITY_NM, EMP_ID)
+				VALUES(#{authrityNo}, #{authrityNm}, #{empId})
+     	</insert>
+  </mapper>

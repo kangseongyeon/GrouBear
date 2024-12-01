@@ -1,0 +1,123 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+  PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+  "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+  
+  <mapper namespace="kr.or.ddit.employee.provedoc.mapper.IEmpProvedocMapper">
+	
+	<!-- 리스트에서 검색어로 조회 -->
+	<sql id="provedocSearch">
+      <if test="searchWord != null">
+         and (
+         		prdoc_aply_dt like '%' || #{searchWord} || '%' or
+         		prdoc_ispr_dt like '%' || #{searchWord} || '%' or
+         		doc_form_nm like '%' || #{searchWord} || '%' or
+         		dept_nm like '%' || #{searchWord} || '%' or
+         		team_nm like '%' || #{searchWord} || '%' or
+         		emp_nm like '%' || #{searchWord} || '%'
+         	)
+      </if>
+   </sql>
+	
+	<!-- 증명서 목록 게시물 수 조회 (사원) -->
+	<select id="empSelectProvedocCount" parameterType="kr.or.ddit.comm.paging.vo.PaginationInfoVO" resultType="int">
+		select count(*)
+		from (
+		    select a.*, row_number() over (order by PRDOC_APLY_DT desc) rnum
+		    from (
+		        select 
+		            PRDOC_NO, PRDOC_ISPR_EMP_ID, PRDOC_APLY_EMP_ID,
+		            PRDOC_APLY_DT, PRDOC_APRV_YN,
+		            PRDOC_CN, PRDOC_ISPR_DT, CO_CD, doc_form_no, PRDOC_INFO_EMP_ID
+		        from PROVE_DOCUMENT
+		        where co_cd = #{coCd} and PRDOC_APLY_EMP_ID = #{empId}
+		        order by PRDOC_APLY_DT desc
+		        ) a
+		    ) b, employee e, department d, team t, DOCUMENT_FORM f
+		where b.PRDOC_INFO_EMP_ID = e.emp_id and
+		      d.dept_cd = e.dept_cd and
+		      e.team_cd = t.team_cd and
+		      f.doc_form_no = b.doc_form_no
+		      <include refid="provedocSearch"/>
+		order by PRDOC_APLY_DT desc
+	</select>
+	
+	<!-- 증명서 목록 게시물 리스트 조회 (사원) -->
+	<select id="empSelectProvedocList" parameterType="kr.or.ddit.comm.paging.vo.PaginationInfoVO" resultType="kr.or.ddit.employee.provedoc.vo.EmpProvedocVO">
+		select *
+		from (select b.*, e.emp_nm, e.dept_cd, d.dept_nm, e.team_cd, t.team_nm, f.doc_form_nm
+				from (
+				    select a.*, row_number() over (order by PRDOC_APLY_DT desc) rnum
+				    from (
+				        select 
+				            PRDOC_NO, PRDOC_ISPR_EMP_ID, PRDOC_APLY_EMP_ID,
+				            PRDOC_APLY_DT, PRDOC_APRV_YN,
+				            PRDOC_CN, PRDOC_ISPR_DT, CO_CD, doc_form_no, PRDOC_INFO_EMP_ID
+				        from PROVE_DOCUMENT
+				        where co_cd = #{coCd} and PRDOC_APLY_EMP_ID = #{empId}
+				        order by PRDOC_APLY_DT desc
+				        ) a
+				    ) b, employee e, department d, team t, DOCUMENT_FORM f
+				where b.PRDOC_INFO_EMP_ID = e.emp_id and
+				      d.dept_cd = e.dept_cd and
+				      e.team_cd = t.team_cd and
+				      f.doc_form_no = b.doc_form_no
+				      <include refid="provedocSearch"/>
+				order by PRDOC_APLY_DT desc) b
+		<![CDATA[
+		where b.rnum >= #{startRow} and b.rnum <= #{endRow}
+		]]>
+	</select>
+	
+	<!-- 증명서 신청 (사원) -->
+ 	<insert id="empProvedocAplyInsert" parameterType="kr.or.ddit.employee.provedoc.vo.EmpProvedocVO" useGeneratedKeys="true">
+ 		<selectKey keyProperty="prdocNo" resultType="int" order="BEFORE">
+  			select seq_prove_document.nextval from dual
+  		</selectKey>
+		insert into PROVE_DOCUMENT (
+			PRDOC_NO,
+			PRDOC_APLY_EMP_ID,
+			PRDOC_APLY_DT,
+			PRDOC_APRV_YN,
+			
+			PRDOC_CN,
+			CO_CD,
+			DOC_FORM_NO,
+			PRDOC_INFO_EMP_ID
+		) values (
+			#{prdocNo},
+			#{prdocAplyEmpId},
+			sysdate,
+			'N',
+			
+			#{prdocCn},
+			#{coCd},
+			#{docFormNo},
+			#{prdocInfoEmpId}
+		)
+	</insert>
+		
+	<!-- 증명서 양식 목록 가져오기 - Jstree에 출력할 form 계층형 데이터 -->
+	<select id="selectFormListJstree" parameterType="string" resultType="kr.or.ddit.comm.form.vo.FormVO">
+		select doc_form_no, doc_form_nm, doc_form_knd_nm, NVL(DOC_FORM_KND_UP, '#') AS DOC_FORM_KND_UP, co_cd
+		from document_form
+		where doc_form_no = 1
+		        or doc_form_knd_up = 1
+		        or doc_form_no in (
+		            (select doc_form_no from document_form where doc_form_knd_up in (select doc_form_no from document_form where doc_form_knd_up = 1 ))
+		        ) and co_cd in ('cp1', #{coCd}) and DOC_FORM_DEL_YN = 'N'
+		order by DOC_FORM_KND_UP
+	</select>
+		
+	<!-- 증명서 상세보기 -->
+	<select id="provedocDetail" parameterType="kr.or.ddit.employee.provedoc.vo.EmpProvedocVO" resultType="kr.or.ddit.employee.provedoc.vo.EmpProvedocVO">
+		select b.*, e.emp_nm, e.dept_cd, d.dept_nm, e.team_cd, t.team_nm, f.doc_form_nm
+		from PROVE_DOCUMENT b, employee e, department d, team t, DOCUMENT_FORM f
+		where PRDOC_NO = #{prdocNo} and
+		      b.PRDOC_INFO_EMP_ID = e.emp_id and
+		      d.dept_cd = e.dept_cd and
+		      e.team_cd = t.team_cd and
+		      f.doc_form_no = b.doc_form_no
+	</select>
+	
+  </mapper>

@@ -1,0 +1,55 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+  PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+  "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+  
+  <mapper namespace="kr.or.ddit.comm.tiles.mapper.ITilesMapper">
+  	
+  	<select id="getEpmt" resultType="kr.or.ddit.company.personnelInformation.vo.DepartmentVO">
+  		SELECT 
+  			DEPT_CD, CO_CD, DEPT_NM, DEPT_CRT_DT, DEPT_ACTVTN_YN, DEPT_IMG_FILE_URL
+  		FROM 
+  			DEPARTMENT 
+  		WHERE 
+  			DEPT_CD = (
+  				SELECT 
+  					DEPT_CD 
+  				FROM 
+  					EMPLOYEE 
+  				WHERE 
+  					EMP_ID = #{empId})
+  	</select>
+  	
+  	<select id="getTeam" resultType="kr.or.ddit.company.personnelInformation.vo.TeamVO">
+  		SELECT 
+			TEAM_CD, DEPT_CD, TEAM_NM, TEAM_CRT_DT, TEAM_ACTVTN_YN
+		FROM 
+			TEAM
+		WHERE 
+			TEAM_CD	= (
+				SELECT 
+					TEAM_CD 
+				FROM 
+					EMPLOYEE 
+				WHERE 
+					EMP_ID = #{empId}
+			)
+  	</select>
+  	
+  	<select id="getCompany" resultType="kr.or.ddit.comm.security.vo.CompanyVO">
+  		SELECT 
+			CO_CD, CEO_ID, CO_NM, CO_REG_DT, CO_CNT, CO_BRNO, CEO_NM, CO_ZIP, CO_ADDR, CO_DADDR, CO_TEL
+		FROM 
+			COMPANY
+		WHERE 
+			CO_CD = (
+				SELECT 
+					CO_CD 
+				FROM 
+					EMPLOYEE 
+				WHERE 
+					EMP_ID = #{empId}
+				)
+  	</select>
+  
+  </mapper>

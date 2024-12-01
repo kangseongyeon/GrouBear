@@ -1,0 +1,1052 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+  PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+  "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+  
+  <mapper namespace="kr.or.ddit.comm.elapr.mapper.IMyElaprMapper">
+  
+  	<sql id="elaprSearch">
+  		<if test="searchWord != null">
+  			and (
+         		elapr_bgng_dt like '%' || #{searchWord} || '%' or
+         		elapr_nm like '%' || #{searchWord} || '%' or
+         		df.doc_form_nm like '%' || #{searchWord} || '%' or
+         		emp.emp_nm like '%' || #{searchWord} || '%' 
+         	)
+  		</if>
+  	</sql>
+  
+  
+  	<sql id="elaprAllSearch">
+  		<if test="searchWord != null">
+  			where (
+        		elapr_bgng_dt like '%' || #{searchWord} || '%' or
+        		elapr_nm like '%' || #{searchWord} || '%' or
+        		df.doc_form_nm like '%' || #{searchWord} || '%' or
+        		emp.emp_nm like '%' || #{searchWord} || '%'
+        	) 
+  		</if>
+  	</sql>
+  
+  	<!-- //////////////////// 기안 문서함  ////////////////////  -->
+  	<!-- 기안 문서함 페이징 -->
+  	<select id="selectDraftCount" parameterType="kr.or.ddit.comm.paging.vo.PaginationInfoVO" resultType="int">
+  		SELECT COUNT (*) total_count
+		FROM (
+		    SELECT ea.elapr_no, elapr_bgng_dt, elapr_nm, ea.doc_form_no, elapr_stts_cd, 
+		    atch_file_code, elapr_emrg_yn, df.doc_form_nm, emp.emp_nm
+		    FROM electronic_approval ea, document_form df, employee emp
+		    WHERE ea.doc_form_no = df.doc_form_no
+		        AND ea.emp_id = emp.emp_id
+		        AND ea.emp_id = #{empId}
+		        AND elapr_del_yn in ('N', 'n')
+			<include refid="elaprSearch"/>
+		) a
+  	</select>
+  	
+  	<!-- 기안 문서함 리스트 -->
+  	<select id="selectMyElaprDraftList" parameterType="kr.or.ddit.comm.paging.vo.PaginationInfoVO" resultType="kr.or.ddit.comm.elapr.vo.ElaprVO">
+  		SELECT
+		    b.*
+		FROM (
+		    SELECT
+		        a.*, row_number() over (order by a.elapr_no desc) rnum 
+		    FROM (
+		        SELECT
+		            ea.elapr_no, elapr_bgng_dt, elapr_end_dt, elapr_nm, ea.doc_form_no, elapr_stts_cd, elapr_del_yn, 
+		            atch_file_code, elapr_emrg_yn, df.doc_form_nm, ea.emp_id, emp.emp_nm
+		        FROM electronic_approval ea, document_form df, employee emp
+		        WHERE 1=1 
+		            AND ea.doc_form_no = df.doc_form_no
+		            AND ea.emp_id = emp.emp_id
+		            AND ea.emp_id = #{empId}
+		            AND elapr_del_yn in ('N', 'n')
+		        <include refid="elaprSearch"/>
+		        ORDER BY ea.elapr_no DESC
+		    ) a
+		) b
+		<![CDATA[
+			WHERE b.rnum >= #{startRow} and b.rnum <= #{endRow}
+		]]>
+  	</select>
+
+  	
+  	<!-- //////////////////// 참조/열람 문서함  ////////////////////  -->
+  	<!-- 참조 문서함 페이징 -->
+  	<select id="selectRerncCount" parameterType="kr.or.ddit.comm.paging.vo.PaginationInfoVO" resultType="int">
+  		SELECT COUNT (*) total_count
+		FROM (
+		    SELECT
+		        ea.elapr_no ,ea.doc_form_no ,ea.emp_id ,ea.co_cd ,ea.atch_file_code ,ea.elapr_nm ,ea.elapr_cn
+		       ,ea.elapr_bgng_dt ,ea.elapr_mdfcn_dt ,ea.elapr_end_dt ,ea.elapr_stts_cd ,ea.elapr_del_yn ,ea.elapr_emrg_yn ,ea.elapr_opnn_cn
+		       ,emp.emp_nm, df.doc_form_nm
+		    FROM
+		        electronic_approval ea, employee emp, document_form df, rernc r
+		    WHERE ea.emp_id = emp.emp_id
+		        AND ea.elapr_no = r.elapr_no
+		        AND ea.doc_form_no = df.doc_form_no
+		        AND r.emp_id = #{empId}
+		        AND r.rernc_del_yn in ('N', 'n')
+	        	<include refid="elaprSearch"/>
+		    ORDER BY ea.elapr_no desc
+		 ) a
+  	</select>
+  	
+  	<!-- 참조 문서함 리스트 -->
+  	<select id="selectRerncList" parameterType="kr.or.ddit.comm.paging.vo.PaginationInfoVO" resultType="kr.or.ddit.comm.elapr.vo.ElaprVO">
+  		SELECT
+		    b.*
+		FROM (
+		    SELECT
+		        a.*, row_number() over (order by a.elapr_no desc) rnum
+		    FROM (
+		        SELECT
+		            ea.elapr_no ,ea.doc_form_no ,ea.emp_id ,ea.co_cd ,ea.atch_file_code ,ea.elapr_nm ,ea.elapr_cn
+		           ,ea.elapr_bgng_dt ,ea.elapr_mdfcn_dt ,ea.elapr_end_dt ,ea.elapr_stts_cd ,ea.elapr_del_yn ,ea.elapr_emrg_yn ,ea.elapr_opnn_cn
+		           ,emp.emp_nm, df.doc_form_nm
+		        FROM
+		            electronic_approval ea, employee emp, document_form df, rernc r
+		        WHERE ea.emp_id = emp.emp_id
+		            AND ea.elapr_no = r.elapr_no
+		            AND ea.doc_form_no = df.doc_form_no
+		            AND r.emp_id = #{empId}
+		            AND r.rernc_del_yn in ('N', 'n')
+		            <include refid="elaprSearch"/>
+		        ORDER BY ea.elapr_no desc
+		    ) a
+		)b
+		<![CDATA[
+			WHERE b.rnum >= #{startRow} and b.rnum <= #{endRow}
+		]]>
+  	</select>
+  	
+  	<!-- 열람 문서함 페이징 -->
+  	<select id="selectPrslCount" parameterType="kr.or.ddit.comm.paging.vo.PaginationInfoVO" resultType="int">
+  		SELECT COUNT (*) total_count
+		FROM (
+		    SELECT
+		        ea.elapr_no ,ea.doc_form_no ,ea.emp_id ,ea.co_cd ,ea.atch_file_code ,ea.elapr_nm
+		       ,ea.elapr_bgng_dt ,ea.elapr_mdfcn_dt ,ea.elapr_end_dt ,ea.elapr_stts_cd ,ea.elapr_del_yn ,ea.elapr_emrg_yn ,ea.elapr_opnn_cn
+		       ,emp.emp_nm, df.doc_form_nm
+		    FROM
+		        electronic_approval ea, employee emp, document_form df, elapr_prsl ep
+		    WHERE ea.emp_id = emp.emp_id
+		        AND ea.elapr_no = ep.elapr_no
+		        AND ea.doc_form_no = df.doc_form_no
+		        AND ep.emp_id = #{empId}
+		        AND ep.elapr_prsl_del_yn in ('N', 'n')
+		        AND NOT EXISTS (
+		            SELECT 1
+		            FROM approval_line al
+		            WHERE al.elapr_no = ea.elapr_no
+		                AND al.apln_stts_cd != 'APLN002'
+		        )
+		    <include refid="elaprSearch"/>
+		    ORDER BY ea.elapr_no desc
+		) a
+  	</select>
+  	
+  	<!-- 열람 문서함 리스트 -->
+  	<select id="selectPrslList" parameterType="kr.or.ddit.comm.paging.vo.PaginationInfoVO" resultType="kr.or.ddit.comm.elapr.vo.ElaprVO">
+  		SELECT
+		    b.*
+		FROM (
+		    SELECT
+		        a.*, row_number() over (order by a.elapr_no desc) rnum
+		    FROM (
+		        SELECT
+		            ea.elapr_no ,ea.doc_form_no ,ea.emp_id ,ea.co_cd ,ea.atch_file_code ,ea.elapr_nm
+		           ,ea.elapr_bgng_dt ,ea.elapr_mdfcn_dt ,ea.elapr_end_dt ,ea.elapr_stts_cd ,ea.elapr_del_yn ,ea.elapr_emrg_yn ,ea.elapr_opnn_cn
+		           ,emp.emp_nm, df.doc_form_nm
+		        FROM
+		            electronic_approval ea, employee emp, document_form df, elapr_prsl ep
+		        WHERE ea.emp_id = emp.emp_id
+		            AND ea.elapr_no = ep.elapr_no
+		            AND ea.doc_form_no = df.doc_form_no
+		            AND ep.emp_id = #{empId}
+		            AND ep.elapr_prsl_del_yn in ('N', 'n')
+		            AND NOT EXISTS (
+		                SELECT 1
+		                FROM approval_line al
+		                WHERE al.elapr_no = ea.elapr_no
+		                    AND al.apln_stts_cd != 'APLN002'
+		            )
+				<include refid="elaprSearch"/>
+		        ORDER BY ea.elapr_no desc
+		    ) a
+		) b
+		<![CDATA[
+			WHERE b.rnum >= #{startRow} and b.rnum <= #{endRow}
+		]]>
+  	</select>
+  	
+  	
+  	<!-- //////////////////// 결재 전체 문서함  ////////////////////  -->
+  	<!-- 결재 전체 문서함 페이징 -->
+  	<select id="selectAllCount" parameterType="kr.or.ddit.comm.paging.vo.PaginationInfoVO" resultType="int">
+  		SELECT COUNT (*) total_count
+		FROM (
+		    SELECT *
+		FROM (
+		    SELECT
+		        ea.elapr_no ,ea.doc_form_no ,df.doc_form_nm, ea.emp_id ,emp.emp_nm, ea.co_cd ,ea.atch_file_code ,ea.elapr_nm ,ea.elapr_cn ,ea.elapr_bgng_dt ,ea.elapr_mdfcn_dt ,ea.elapr_end_dt
+		       ,ea.elapr_stts_cd ,ea.elapr_del_yn ,ea.elapr_emrg_yn ,ea.elapr_opnn_cn
+		       , row_number() over (order by elapr_no desc) AS rnum
+		    FROM (
+		        SELECT
+		            elapr_no ,doc_form_no ,emp_id ,co_cd ,atch_file_code ,elapr_nm ,elapr_cn ,elapr_bgng_dt ,elapr_mdfcn_dt ,elapr_end_dt
+		           ,elapr_stts_cd ,elapr_del_yn ,elapr_emrg_yn ,elapr_opnn_cn 
+		        FROM
+		            electronic_approval
+		        WHERE
+		            emp_id = #{empId}
+		            and elapr_del_yn in ('N', 'n')
+		        
+		        UNION ALL
+		        
+		        SELECT
+		            ea.elapr_no ,doc_form_no ,ea.emp_id ,co_cd ,atch_file_code ,elapr_nm ,elapr_cn ,elapr_bgng_dt ,elapr_mdfcn_dt ,elapr_end_dt
+		           ,elapr_stts_cd ,elapr_del_yn ,elapr_emrg_yn ,elapr_opnn_cn 
+		        FROM
+		            electronic_approval ea inner join approval_line al on(ea.elapr_no = al.elapr_no)
+		        WHERE al.emp_id = #{empId} 
+		            AND elapr_del_yn in ('N', 'n')
+		        ) ea
+		        LEFT JOIN employee emp on ea.emp_id = emp.emp_id
+		        LEFT JOIN document_form df on ea.doc_form_no = df.doc_form_no
+	           <include refid="elaprAllSearch"/>
+		    ) b
+		   
+		    ORDER BY b.elapr_no desc
+		) a
+  	</select>
+  	
+  	<!-- 결재 전체 문서함 리스트 -->
+  	<select id="selectAllList" parameterType="kr.or.ddit.comm.paging.vo.PaginationInfoVO" resultType="kr.or.ddit.comm.elapr.vo.ElaprVO">
+  		SELECT *
+		FROM (
+		    SELECT
+		        ea.elapr_no ,ea.doc_form_no ,df.doc_form_nm, ea.emp_id ,emp.emp_nm, ea.co_cd ,ea.atch_file_code ,ea.elapr_nm ,ea.elapr_cn ,ea.elapr_bgng_dt ,ea.elapr_mdfcn_dt ,ea.elapr_end_dt
+		       ,ea.elapr_stts_cd ,ea.elapr_del_yn ,ea.elapr_emrg_yn ,ea.elapr_opnn_cn
+		       , row_number() over (order by elapr_no desc) AS rnum
+		    FROM (
+		        SELECT
+		            elapr_no ,doc_form_no ,emp_id ,co_cd ,atch_file_code ,elapr_nm ,elapr_cn ,elapr_bgng_dt ,elapr_mdfcn_dt ,elapr_end_dt
+		           ,elapr_stts_cd ,elapr_del_yn ,elapr_emrg_yn ,elapr_opnn_cn 
+		        FROM
+		            electronic_approval
+		        WHERE
+		            emp_id = #{empId}
+		            and elapr_del_yn in ('N', 'n')
+		    
+		    UNION ALL
+		    
+		    SELECT
+		        ea.elapr_no ,doc_form_no ,ea.emp_id ,co_cd ,atch_file_code ,elapr_nm ,elapr_cn ,elapr_bgng_dt ,elapr_mdfcn_dt ,elapr_end_dt
+		       ,elapr_stts_cd ,elapr_del_yn ,elapr_emrg_yn ,elapr_opnn_cn 
+		    FROM
+		        electronic_approval ea INNER JOIN approval_line al on(ea.elapr_no = al.elapr_no)
+		    WHERE al.emp_id = #{empId} 
+		        AND elapr_del_yn in ('N', 'n')
+		    ) ea
+		    LEFT JOIN employee emp on ea.emp_id = emp.emp_id
+		    LEFT JOIN document_form df on ea.doc_form_no = df.doc_form_no
+		    <include refid="elaprAllSearch"/>
+		) b
+		<![CDATA[
+		WHERE b.rnum >= #{startRow} and b.rnum <=#{endRow}
+		]]>
+		ORDER BY b.elapr_no desc
+  	</select>
+  	
+  	
+ 	<!-- //////////////////// 결재 긴급 문서함  ////////////////////  -->
+  	<!-- 결재 긴급 문서함 페이징 -->
+  	<select id="selectEmrgCount" parameterType="kr.or.ddit.comm.paging.vo.PaginationInfoVO" resultType="int">
+  		SELECT COUNT (*) total_count
+		FROM (
+		    SELECT *
+		FROM (
+		    SELECT
+		        ea.elapr_no ,ea.doc_form_no ,df.doc_form_nm, ea.emp_id ,emp.emp_nm, ea.co_cd ,ea.atch_file_code ,ea.elapr_nm ,ea.elapr_cn ,ea.elapr_bgng_dt ,ea.elapr_mdfcn_dt ,ea.elapr_end_dt
+		       ,ea.elapr_stts_cd ,ea.elapr_del_yn ,ea.elapr_emrg_yn ,ea.elapr_opnn_cn
+		       , row_number() over (order by elapr_no desc) AS rnum
+		    FROM (
+		        SELECT
+		            elapr_no ,doc_form_no ,emp_id ,co_cd ,atch_file_code ,elapr_nm ,elapr_cn ,elapr_bgng_dt ,elapr_mdfcn_dt ,elapr_end_dt
+		           ,elapr_stts_cd ,elapr_del_yn ,elapr_emrg_yn ,elapr_opnn_cn 
+		        FROM
+		            electronic_approval
+		        WHERE
+		            emp_id = #{empId}
+		            and elapr_del_yn in ('N', 'n')
+		            and elapr_emrg_yn in ('Y', 'y')
+		        
+		        UNION ALL
+		        
+		        SELECT
+		            ea.elapr_no ,doc_form_no ,ea.emp_id ,co_cd ,atch_file_code ,elapr_nm ,elapr_cn ,elapr_bgng_dt ,elapr_mdfcn_dt ,elapr_end_dt
+		           ,elapr_stts_cd ,elapr_del_yn ,elapr_emrg_yn ,elapr_opnn_cn 
+		        FROM
+		            electronic_approval ea inner join approval_line al on(ea.elapr_no = al.elapr_no)
+		        WHERE al.emp_id = #{empId}
+		            AND elapr_del_yn in ('N', 'n')
+		            and elapr_emrg_yn in ('Y', 'y')
+		        ) ea
+		        LEFT JOIN employee emp on ea.emp_id = emp.emp_id
+		        LEFT JOIN document_form df on ea.doc_form_no = df.doc_form_no
+			   <include refid="elaprAllSearch"/>
+		    ) b
+		    ORDER BY b.elapr_no desc
+		) a
+  	</select>
+  	
+  	<!-- 결재 긴급 문서함 리스트 -->
+  	<select id="selectEmrgList" parameterType="kr.or.ddit.comm.paging.vo.PaginationInfoVO" resultType="kr.or.ddit.comm.elapr.vo.ElaprVO">
+		SELECT *
+		FROM (
+		    SELECT
+		        ea.elapr_no ,ea.doc_form_no ,df.doc_form_nm, ea.emp_id ,emp.emp_nm, ea.co_cd ,ea.atch_file_code ,ea.elapr_nm ,ea.elapr_cn ,ea.elapr_bgng_dt ,ea.elapr_mdfcn_dt ,ea.elapr_end_dt
+		       ,ea.elapr_stts_cd ,ea.elapr_del_yn ,ea.elapr_emrg_yn ,ea.elapr_opnn_cn
+		       , row_number() over (order by elapr_no desc) AS rnum
+		    FROM (
+		        SELECT
+		            elapr_no ,doc_form_no ,emp_id ,co_cd ,atch_file_code ,elapr_nm ,elapr_cn ,elapr_bgng_dt ,elapr_mdfcn_dt ,elapr_end_dt
+		           ,elapr_stts_cd ,elapr_del_yn ,elapr_emrg_yn ,elapr_opnn_cn 
+		        FROM
+		            electronic_approval
+		        WHERE
+		            emp_id = #{empId}
+		            and elapr_del_yn in ('N', 'n')
+		            and elapr_emrg_yn in ('Y', 'y')
+		    UNION ALL
+		    
+		    SELECT
+		        ea.elapr_no ,doc_form_no ,ea.emp_id ,co_cd ,atch_file_code ,elapr_nm ,elapr_cn ,elapr_bgng_dt ,elapr_mdfcn_dt ,elapr_end_dt
+		       ,elapr_stts_cd ,elapr_del_yn ,elapr_emrg_yn ,elapr_opnn_cn 
+		    FROM
+		        electronic_approval ea INNER JOIN approval_line al on(ea.elapr_no = al.elapr_no)
+		    WHERE al.emp_id = #{empId}
+		        AND elapr_del_yn in ('N', 'n')
+		        and elapr_emrg_yn in ('Y', 'y')
+		    ) ea
+		    LEFT JOIN employee emp on ea.emp_id = emp.emp_id
+		    LEFT JOIN document_form df on ea.doc_form_no = df.doc_form_no
+		    <include refid="elaprAllSearch"/>
+		) b
+		<![CDATA[
+		WHERE b.rnum >= #{startRow} and b.rnum <=#{endRow}
+		]]>
+		ORDER BY b.elapr_no desc
+  	</select>
+  	
+  	
+  	
+  	<!-- //////////////////// 결재 진행 문서함  ////////////////////  -->
+  	<!-- 결재 진행 문서함 페이징 -->
+  	<select id="selectProgressCount" parameterType="kr.or.ddit.comm.paging.vo.PaginationInfoVO" resultType="int">
+  		SELECT COUNT (*) total_count
+		FROM (
+		    SELECT *
+		FROM (
+		    SELECT
+		        ea.elapr_no ,ea.doc_form_no ,df.doc_form_nm, ea.emp_id ,emp.emp_nm, ea.co_cd ,ea.atch_file_code ,ea.elapr_nm ,ea.elapr_cn ,ea.elapr_bgng_dt ,ea.elapr_mdfcn_dt ,ea.elapr_end_dt
+		       ,ea.elapr_stts_cd ,ea.elapr_del_yn ,ea.elapr_emrg_yn ,ea.elapr_opnn_cn
+		       , row_number() over (order by elapr_no desc) AS rnum
+		    FROM (
+		        SELECT
+		            elapr_no ,doc_form_no ,emp_id ,co_cd ,atch_file_code ,elapr_nm ,elapr_cn ,elapr_bgng_dt ,elapr_mdfcn_dt ,elapr_end_dt
+		           ,elapr_stts_cd ,elapr_del_yn ,elapr_emrg_yn ,elapr_opnn_cn 
+		        FROM
+		            electronic_approval
+		        WHERE
+		            emp_id = #{empId}
+		            AND elapr_stts_cd = 'APRZ001'
+		            AND elapr_del_yn in ('N', 'n')
+		    
+		    UNION ALL
+		    
+		    SELECT
+		        ea.elapr_no ,doc_form_no ,ea.emp_id ,co_cd ,atch_file_code ,elapr_nm ,elapr_cn ,elapr_bgng_dt ,elapr_mdfcn_dt ,elapr_end_dt
+		       ,elapr_stts_cd ,elapr_del_yn ,elapr_emrg_yn ,elapr_opnn_cn 
+		    FROM
+		        electronic_approval ea INNER JOIN approval_line al on(ea.elapr_no = al.elapr_no)
+		    WHERE al.emp_id = #{empId} 
+		        AND elapr_stts_cd = 'APRZ001'
+		        AND elapr_del_yn in ('N', 'n')
+		    ) ea
+		    LEFT JOIN employee emp on ea.emp_id = emp.emp_id
+		    LEFT JOIN document_form df on ea.doc_form_no = df.doc_form_no
+		   <include refid="elaprAllSearch"/>
+		) b
+		    
+		    ORDER BY b.elapr_no desc
+		) a
+  	</select>
+  	
+  	<!-- 결재 진행 문서함 리스트 -->
+  	<select id="selectProgressList" parameterType="kr.or.ddit.comm.paging.vo.PaginationInfoVO" resultType="kr.or.ddit.comm.elapr.vo.ElaprVO">
+  		SELECT *
+		FROM (
+		    SELECT
+		        ea.elapr_no ,ea.doc_form_no ,df.doc_form_nm, ea.emp_id ,emp.emp_nm, ea.co_cd ,ea.atch_file_code ,ea.elapr_nm ,ea.elapr_cn ,ea.elapr_bgng_dt ,ea.elapr_mdfcn_dt ,ea.elapr_end_dt
+		       ,ea.elapr_stts_cd ,ea.elapr_del_yn ,ea.elapr_emrg_yn ,ea.elapr_opnn_cn
+		       , row_number() over (order by elapr_no desc) AS rnum
+		    FROM (
+		        SELECT
+		            elapr_no ,doc_form_no ,emp_id ,co_cd ,atch_file_code ,elapr_nm ,elapr_cn ,elapr_bgng_dt ,elapr_mdfcn_dt ,elapr_end_dt
+		           ,elapr_stts_cd ,elapr_del_yn ,elapr_emrg_yn ,elapr_opnn_cn 
+		        FROM
+		            electronic_approval
+		        WHERE
+		            emp_id = #{empId}
+		            AND elapr_stts_cd = 'APRZ001'
+		            AND elapr_del_yn in ('N', 'n')
+		    
+		    UNION ALL
+		    
+		    SELECT
+		        ea.elapr_no ,doc_form_no ,ea.emp_id ,co_cd ,atch_file_code ,elapr_nm ,elapr_cn ,elapr_bgng_dt ,elapr_mdfcn_dt ,elapr_end_dt
+		       ,elapr_stts_cd ,elapr_del_yn ,elapr_emrg_yn ,elapr_opnn_cn 
+		    FROM
+		        electronic_approval ea INNER JOIN approval_line al on(ea.elapr_no = al.elapr_no)
+		    WHERE al.emp_id = #{empId}
+		        AND elapr_stts_cd = 'APRZ001'
+		        AND elapr_del_yn in ('N', 'n')
+		    ) ea
+		    LEFT JOIN employee emp on ea.emp_id = emp.emp_id
+		    LEFT JOIN document_form df on ea.doc_form_no = df.doc_form_no
+		   <include refid="elaprAllSearch"/>
+		) b
+		<![CDATA[
+		WHERE b.rnum >= #{startRow} and b.rnum <=#{endRow}
+		]]>
+		ORDER BY b.elapr_no desc
+  	</select>
+  	
+  	<!-- //////////////////// 결재 완료 문서함  ////////////////////  -->
+  	<!-- 결재 완료 문서함 페이징 -->
+  	<select id="selectCompleteCount" parameterType="kr.or.ddit.comm.paging.vo.PaginationInfoVO" resultType="int">
+  		SELECT COUNT (*) total_count
+		FROM (
+		    SELECT *
+		FROM (
+		    SELECT
+		        ea.elapr_no ,ea.doc_form_no ,df.doc_form_nm, ea.emp_id ,emp.emp_nm, ea.co_cd ,ea.atch_file_code ,ea.elapr_nm ,ea.elapr_cn ,ea.elapr_bgng_dt ,ea.elapr_mdfcn_dt ,ea.elapr_end_dt
+		       ,ea.elapr_stts_cd ,ea.elapr_del_yn ,ea.elapr_emrg_yn ,ea.elapr_opnn_cn
+		       , row_number() over (order by elapr_no desc) AS rnum
+		    FROM (
+		        SELECT
+		            elapr_no ,doc_form_no ,emp_id ,co_cd ,atch_file_code ,elapr_nm ,elapr_cn ,elapr_bgng_dt ,elapr_mdfcn_dt ,elapr_end_dt
+		           ,elapr_stts_cd ,elapr_del_yn ,elapr_emrg_yn ,elapr_opnn_cn 
+		        FROM
+		            electronic_approval
+		        WHERE
+		            emp_id = #{empId}
+		            AND elapr_stts_cd = 'APRZ002'
+		            AND elapr_del_yn in ('N', 'n')
+		    
+		    UNION ALL
+		    
+		    SELECT
+		        ea.elapr_no ,doc_form_no ,ea.emp_id ,co_cd ,atch_file_code ,elapr_nm ,elapr_cn ,elapr_bgng_dt ,elapr_mdfcn_dt ,elapr_end_dt
+		       ,elapr_stts_cd ,elapr_del_yn ,elapr_emrg_yn ,elapr_opnn_cn 
+		    FROM
+		        electronic_approval ea INNER JOIN approval_line al on(ea.elapr_no = al.elapr_no)
+		    WHERE al.emp_id = #{empId}
+		        AND elapr_stts_cd = 'APRZ002'
+		        AND elapr_del_yn in ('N', 'n')
+		    ) ea
+		    LEFT JOIN employee emp on ea.emp_id = emp.emp_id
+		    LEFT JOIN document_form df on ea.doc_form_no = df.doc_form_no
+		    <include refid="elaprAllSearch"/>
+		) b
+		    
+		    ORDER BY b.elapr_no desc
+		) a
+  	</select>
+  	
+  	
+  	<!-- 결재 완료 문서함 리스트 -->
+  	<select id="selectCompleteList" parameterType="kr.or.ddit.comm.paging.vo.PaginationInfoVO" resultType="kr.or.ddit.comm.elapr.vo.ElaprVO">
+  		SELECT *
+		FROM (
+		    SELECT
+		        ea.elapr_no ,ea.doc_form_no ,df.doc_form_nm, ea.emp_id ,emp.emp_nm, ea.co_cd ,ea.atch_file_code ,ea.elapr_nm ,ea.elapr_cn ,ea.elapr_bgng_dt ,ea.elapr_mdfcn_dt ,ea.elapr_end_dt
+		       ,ea.elapr_stts_cd ,ea.elapr_del_yn ,ea.elapr_emrg_yn ,ea.elapr_opnn_cn
+		       , row_number() over (order by elapr_no desc) AS rnum
+		    FROM (
+		        SELECT
+		            elapr_no ,doc_form_no ,emp_id ,co_cd ,atch_file_code ,elapr_nm ,elapr_cn ,elapr_bgng_dt ,elapr_mdfcn_dt ,elapr_end_dt
+		           ,elapr_stts_cd ,elapr_del_yn ,elapr_emrg_yn ,elapr_opnn_cn 
+		        FROM
+		            electronic_approval
+		        WHERE
+		            emp_id = #{empId}
+		            AND elapr_stts_cd = 'APRZ002'
+		            AND elapr_del_yn in ('N', 'n')
+		    
+		    UNION ALL
+		    
+		    SELECT
+		        ea.elapr_no ,doc_form_no ,ea.emp_id ,co_cd ,atch_file_code ,elapr_nm ,elapr_cn ,elapr_bgng_dt ,elapr_mdfcn_dt ,elapr_end_dt
+		       ,elapr_stts_cd ,elapr_del_yn ,elapr_emrg_yn ,elapr_opnn_cn 
+		    FROM
+		        electronic_approval ea INNER JOIN approval_line al on(ea.elapr_no = al.elapr_no)
+		    WHERE al.emp_id = #{empId} 
+		        AND elapr_stts_cd = 'APRZ002'
+		        AND elapr_del_yn in ('N', 'n')
+		    ) ea
+		    LEFT JOIN employee emp on ea.emp_id = emp.emp_id
+		    LEFT JOIN document_form df on ea.doc_form_no = df.doc_form_no
+		   	<include refid="elaprAllSearch"/>
+		) b
+		<![CDATA[
+		WHERE b.rnum >= #{startRow} and b.rnum <=#{endRow}
+		]]>
+		ORDER BY b.elapr_no desc
+  	</select>
+  	
+  	<!-- //////////////////// 결재 반려 문서함  ////////////////////  -->
+  	<!-- 결재 반려 문서함 페이징 -->
+  	<select id="selectRjctCount" parameterType="kr.or.ddit.comm.paging.vo.PaginationInfoVO" resultType="int">
+  		SELECT COUNT (*) total_count
+		FROM (
+		    SELECT *
+		FROM (
+		    SELECT
+		        ea.elapr_no ,ea.doc_form_no ,df.doc_form_nm, ea.emp_id ,emp.emp_nm, ea.co_cd ,ea.atch_file_code ,ea.elapr_nm ,ea.elapr_cn ,ea.elapr_bgng_dt ,ea.elapr_mdfcn_dt ,ea.elapr_end_dt
+		       ,ea.elapr_stts_cd ,ea.elapr_del_yn ,ea.elapr_emrg_yn ,ea.elapr_opnn_cn
+		       , row_number() over (order by elapr_no desc) AS rnum
+		    FROM (
+		        SELECT
+		            elapr_no ,doc_form_no ,emp_id ,co_cd ,atch_file_code ,elapr_nm ,elapr_cn ,elapr_bgng_dt ,elapr_mdfcn_dt ,elapr_end_dt
+		           ,elapr_stts_cd ,elapr_del_yn ,elapr_emrg_yn ,elapr_opnn_cn 
+		        FROM
+		            electronic_approval
+		        WHERE
+		            emp_id = #{empId}
+		            AND elapr_stts_cd = 'APRZ003'
+		            AND elapr_del_yn in ('N', 'n')
+		    
+		    UNION ALL
+		    
+		    SELECT
+		        ea.elapr_no ,doc_form_no ,ea.emp_id ,co_cd ,atch_file_code ,elapr_nm ,elapr_cn ,elapr_bgng_dt ,elapr_mdfcn_dt ,elapr_end_dt
+		       ,elapr_stts_cd ,elapr_del_yn ,elapr_emrg_yn ,elapr_opnn_cn 
+		    FROM
+		        electronic_approval ea INNER JOIN approval_line al on(ea.elapr_no = al.elapr_no)
+		    WHERE al.emp_id = #{empId}
+		        AND elapr_stts_cd = 'APRZ003'
+		        AND elapr_del_yn in ('N', 'n')
+		    ) ea
+		    LEFT JOIN employee emp on ea.emp_id = emp.emp_id
+		    LEFT JOIN document_form df on ea.doc_form_no = df.doc_form_no
+            <include refid="elaprAllSearch"/>
+		) b
+		    ORDER BY b.elapr_no desc
+		) a
+  	</select>
+  	
+  	
+  	<!-- 결재 반려 문서함 리스트 -->
+  	<select id="selectRjctList" parameterType="kr.or.ddit.comm.paging.vo.PaginationInfoVO" resultType="kr.or.ddit.comm.elapr.vo.ElaprVO">
+  		SELECT *
+		FROM (
+		    SELECT
+		        ea.elapr_no ,ea.doc_form_no ,df.doc_form_nm, ea.emp_id ,emp.emp_nm, ea.co_cd ,ea.atch_file_code ,ea.elapr_nm ,ea.elapr_cn ,ea.elapr_bgng_dt ,ea.elapr_mdfcn_dt ,ea.elapr_end_dt
+		       ,ea.elapr_stts_cd ,ea.elapr_del_yn ,ea.elapr_emrg_yn ,ea.elapr_opnn_cn
+		       , row_number() over (order by elapr_no desc) AS rnum
+		    FROM (
+		        SELECT
+		            elapr_no ,doc_form_no ,emp_id ,co_cd ,atch_file_code ,elapr_nm ,elapr_cn ,elapr_bgng_dt ,elapr_mdfcn_dt ,elapr_end_dt
+		           ,elapr_stts_cd ,elapr_del_yn ,elapr_emrg_yn ,elapr_opnn_cn 
+		        FROM
+		            electronic_approval
+		        WHERE
+		            emp_id = #{empId}
+		            AND elapr_stts_cd = 'APRZ003'
+		            AND elapr_del_yn in ('N', 'n')
+		    
+		    UNION ALL
+		    
+		    SELECT
+		        ea.elapr_no ,doc_form_no ,ea.emp_id ,co_cd ,atch_file_code ,elapr_nm ,elapr_cn ,elapr_bgng_dt ,elapr_mdfcn_dt ,elapr_end_dt
+		       ,elapr_stts_cd ,elapr_del_yn ,elapr_emrg_yn ,elapr_opnn_cn 
+		    FROM
+		        electronic_approval ea INNER JOIN approval_line al on(ea.elapr_no = al.elapr_no)
+		    WHERE al.emp_id = #{empId}
+		        AND elapr_stts_cd = 'APRZ003'
+		        AND elapr_del_yn in ('N', 'n')
+		    ) ea
+		    LEFT JOIN employee emp on ea.emp_id = emp.emp_id
+		    LEFT JOIN document_form df on ea.doc_form_no = df.doc_form_no
+			<include refid="elaprAllSearch"/>
+		) b
+		<![CDATA[
+		WHERE b.rnum >= #{startRow} and b.rnum <=#{endRow}
+		]]>
+		ORDER BY b.elapr_no desc
+  	</select>
+  	
+  	
+  	
+  	<!-- //////////////////// 개인 전체 문서함  ////////////////////  -->
+  	<!-- 개인 전체 문서함 페이징 -->
+  	<select id="selectMyAllCount" parameterType="kr.or.ddit.comm.paging.vo.PaginationInfoVO" resultType="int">
+  		SELECT COUNT (*) total_count
+		FROM (
+		    SELECT *
+		FROM (
+		    SELECT
+		        ea.elapr_no ,ea.doc_form_no ,df.doc_form_nm, ea.emp_id ,emp.emp_nm, ea.co_cd ,ea.atch_file_code ,ea.elapr_nm ,ea.elapr_cn ,ea.elapr_bgng_dt ,ea.elapr_mdfcn_dt ,ea.elapr_end_dt
+		       ,ea.elapr_stts_cd ,ea.elapr_del_yn ,ea.elapr_emrg_yn ,ea.elapr_opnn_cn
+		       , row_number() over (order by elapr_no desc) AS rnum
+		    FROM (
+		        SELECT
+		            elapr_no ,doc_form_no ,emp_id ,co_cd ,atch_file_code ,elapr_nm ,elapr_cn ,elapr_bgng_dt ,elapr_mdfcn_dt ,elapr_end_dt
+		           ,elapr_stts_cd ,elapr_del_yn ,elapr_emrg_yn ,elapr_opnn_cn 
+		        FROM
+		            electronic_approval
+		        WHERE
+		            emp_id = #{empId}
+		            and elapr_del_yn in ('N', 'n')
+		        ) ea
+		        LEFT JOIN employee emp on ea.emp_id = emp.emp_id
+		        LEFT JOIN document_form df on ea.doc_form_no = df.doc_form_no
+	           <include refid="elaprAllSearch"/>
+		    ) b
+		   
+		    ORDER BY b.elapr_no desc
+		) a
+  	</select>
+  	
+  	<!-- 개인 전체 문서함 리스트 -->
+  	<select id="selectMyAllList" parameterType="kr.or.ddit.comm.paging.vo.PaginationInfoVO" resultType="kr.or.ddit.comm.elapr.vo.ElaprVO">
+  		SELECT *
+		FROM (
+		    SELECT
+		        ea.elapr_no ,ea.doc_form_no ,df.doc_form_nm, ea.emp_id ,emp.emp_nm, ea.co_cd ,ea.atch_file_code ,ea.elapr_nm ,ea.elapr_cn ,ea.elapr_bgng_dt ,ea.elapr_mdfcn_dt ,ea.elapr_end_dt
+		       ,ea.elapr_stts_cd ,ea.elapr_del_yn ,ea.elapr_emrg_yn ,ea.elapr_opnn_cn
+		       , row_number() over (order by elapr_no desc) AS rnum
+		    FROM (
+		        SELECT
+		            elapr_no ,doc_form_no ,emp_id ,co_cd ,atch_file_code ,elapr_nm ,elapr_cn ,elapr_bgng_dt ,elapr_mdfcn_dt ,elapr_end_dt
+		           ,elapr_stts_cd ,elapr_del_yn ,elapr_emrg_yn ,elapr_opnn_cn 
+		        FROM
+		            electronic_approval
+		        WHERE
+		            emp_id = #{empId}
+		            and elapr_del_yn in ('N', 'n')
+		    ) ea
+		    LEFT JOIN employee emp on ea.emp_id = emp.emp_id
+		    LEFT JOIN document_form df on ea.doc_form_no = df.doc_form_no
+		    <include refid="elaprAllSearch"/>
+		) b
+		<![CDATA[
+		WHERE b.rnum >= #{startRow} and b.rnum <=#{endRow}
+		]]>
+		ORDER BY b.elapr_no desc
+  	</select>
+  	
+  	
+  	
+ 	<!-- //////////////////// 결재 긴급 문서함  ////////////////////  -->
+  	<!-- 개인 긴급 문서함 페이징 -->
+  	<select id="selectMyEmrgCount" parameterType="kr.or.ddit.comm.paging.vo.PaginationInfoVO" resultType="int">
+  		SELECT COUNT (*) total_count
+		FROM (
+		    SELECT *
+		FROM (
+		    SELECT
+		        ea.elapr_no ,ea.doc_form_no ,df.doc_form_nm, ea.emp_id ,emp.emp_nm, ea.co_cd ,ea.atch_file_code ,ea.elapr_nm ,ea.elapr_cn ,ea.elapr_bgng_dt ,ea.elapr_mdfcn_dt ,ea.elapr_end_dt
+		       ,ea.elapr_stts_cd ,ea.elapr_del_yn ,ea.elapr_emrg_yn ,ea.elapr_opnn_cn
+		       , row_number() over (order by elapr_no desc) AS rnum
+		    FROM (
+		        SELECT
+		            elapr_no ,doc_form_no ,emp_id ,co_cd ,atch_file_code ,elapr_nm ,elapr_cn ,elapr_bgng_dt ,elapr_mdfcn_dt ,elapr_end_dt
+		           ,elapr_stts_cd ,elapr_del_yn ,elapr_emrg_yn ,elapr_opnn_cn 
+		        FROM
+		            electronic_approval
+		        WHERE
+		            emp_id = #{empId}
+		            and elapr_del_yn in ('N', 'n')
+		            and elapr_emrg_yn in ('Y', 'y')
+		        ) ea
+		        LEFT JOIN employee emp on ea.emp_id = emp.emp_id
+		        LEFT JOIN document_form df on ea.doc_form_no = df.doc_form_no
+			   <include refid="elaprAllSearch"/>
+		    ) b
+		    ORDER BY b.elapr_no desc
+		) a
+  	</select>
+  	
+  	<!-- 개인 긴급 문서함 리스트 -->
+  	<select id="selectMyEmrgList" parameterType="kr.or.ddit.comm.paging.vo.PaginationInfoVO" resultType="kr.or.ddit.comm.elapr.vo.ElaprVO">
+		SELECT *
+		FROM (
+		    SELECT
+		        ea.elapr_no ,ea.doc_form_no ,df.doc_form_nm, ea.emp_id ,emp.emp_nm, ea.co_cd ,ea.atch_file_code ,ea.elapr_nm ,ea.elapr_cn ,ea.elapr_bgng_dt ,ea.elapr_mdfcn_dt ,ea.elapr_end_dt
+		       ,ea.elapr_stts_cd ,ea.elapr_del_yn ,ea.elapr_emrg_yn ,ea.elapr_opnn_cn
+		       , row_number() over (order by elapr_no desc) AS rnum
+		    FROM (
+		        SELECT
+		            elapr_no ,doc_form_no ,emp_id ,co_cd ,atch_file_code ,elapr_nm ,elapr_cn ,elapr_bgng_dt ,elapr_mdfcn_dt ,elapr_end_dt
+		           ,elapr_stts_cd ,elapr_del_yn ,elapr_emrg_yn ,elapr_opnn_cn 
+		        FROM
+		            electronic_approval
+		        WHERE
+		            emp_id = #{empId}
+		            and elapr_del_yn in ('N', 'n')
+		            and elapr_emrg_yn in ('Y', 'y')
+		    ) ea
+		    LEFT JOIN employee emp on ea.emp_id = emp.emp_id
+		    LEFT JOIN document_form df on ea.doc_form_no = df.doc_form_no
+		    <include refid="elaprAllSearch"/>
+		) b
+		<![CDATA[
+		WHERE b.rnum >= #{startRow} and b.rnum <=#{endRow}
+		]]>
+		ORDER BY b.elapr_no desc
+  	</select>
+  	
+  	
+  	
+  	<!-- //////////////////// 개인 진행 문서함  ////////////////////  -->
+  	<!-- 개인 진행 문서함 페이징 -->
+  	<select id="selectMyProgressCount" parameterType="kr.or.ddit.comm.paging.vo.PaginationInfoVO" resultType="int">
+  		SELECT COUNT (*) total_count
+		FROM (
+		    SELECT *
+		FROM (
+		    SELECT
+		        ea.elapr_no ,ea.doc_form_no ,df.doc_form_nm, ea.emp_id ,emp.emp_nm, ea.co_cd ,ea.atch_file_code ,ea.elapr_nm ,ea.elapr_cn ,ea.elapr_bgng_dt ,ea.elapr_mdfcn_dt ,ea.elapr_end_dt
+		       ,ea.elapr_stts_cd ,ea.elapr_del_yn ,ea.elapr_emrg_yn ,ea.elapr_opnn_cn
+		       , row_number() over (order by elapr_no desc) AS rnum
+		    FROM (
+		        SELECT
+		            elapr_no ,doc_form_no ,emp_id ,co_cd ,atch_file_code ,elapr_nm ,elapr_cn ,elapr_bgng_dt ,elapr_mdfcn_dt ,elapr_end_dt
+		           ,elapr_stts_cd ,elapr_del_yn ,elapr_emrg_yn ,elapr_opnn_cn 
+		        FROM
+		            electronic_approval
+		        WHERE
+		            emp_id = #{empId}
+		            AND elapr_stts_cd = 'APRZ001'
+		            AND elapr_del_yn in ('N', 'n')
+		    ) ea
+		    LEFT JOIN employee emp on ea.emp_id = emp.emp_id
+		    LEFT JOIN document_form df on ea.doc_form_no = df.doc_form_no
+		   <include refid="elaprAllSearch"/>
+		) b
+		    
+		    ORDER BY b.elapr_no desc
+		) a
+  	</select>
+  	
+  	<!-- 개인 진행 문서함 리스트 -->
+  	<select id="selectMyProgressList" parameterType="kr.or.ddit.comm.paging.vo.PaginationInfoVO" resultType="kr.or.ddit.comm.elapr.vo.ElaprVO">
+  		SELECT *
+		FROM (
+		    SELECT
+		        ea.elapr_no ,ea.doc_form_no ,df.doc_form_nm, ea.emp_id ,emp.emp_nm, ea.co_cd ,ea.atch_file_code ,ea.elapr_nm ,ea.elapr_cn ,ea.elapr_bgng_dt ,ea.elapr_mdfcn_dt ,ea.elapr_end_dt
+		       ,ea.elapr_stts_cd ,ea.elapr_del_yn ,ea.elapr_emrg_yn ,ea.elapr_opnn_cn
+		       , row_number() over (order by elapr_no desc) AS rnum
+		    FROM (
+		        SELECT
+		            elapr_no ,doc_form_no ,emp_id ,co_cd ,atch_file_code ,elapr_nm ,elapr_cn ,elapr_bgng_dt ,elapr_mdfcn_dt ,elapr_end_dt
+		           ,elapr_stts_cd ,elapr_del_yn ,elapr_emrg_yn ,elapr_opnn_cn 
+		        FROM
+		            electronic_approval
+		        WHERE
+		            emp_id = #{empId}
+		            AND elapr_stts_cd = 'APRZ001'
+		            AND elapr_del_yn in ('N', 'n')
+		    ) ea
+		    LEFT JOIN employee emp on ea.emp_id = emp.emp_id
+		    LEFT JOIN document_form df on ea.doc_form_no = df.doc_form_no
+		   <include refid="elaprAllSearch"/>
+		) b
+		<![CDATA[
+		WHERE b.rnum >= #{startRow} and b.rnum <=#{endRow}
+		]]>
+		ORDER BY b.elapr_no desc
+  	</select>
+  	
+  	<!-- //////////////////// 개인 완료 문서함  ////////////////////  -->
+  	<!-- 개인 결재 완료 문서함 페이징 -->
+  	<select id="selectMyCompleteCount" parameterType="kr.or.ddit.comm.paging.vo.PaginationInfoVO" resultType="int">
+  		SELECT COUNT (*) total_count
+		FROM (
+		    SELECT *
+		FROM (
+		    SELECT
+		        ea.elapr_no ,ea.doc_form_no ,df.doc_form_nm, ea.emp_id ,emp.emp_nm, ea.co_cd ,ea.atch_file_code ,ea.elapr_nm ,ea.elapr_cn ,ea.elapr_bgng_dt ,ea.elapr_mdfcn_dt ,ea.elapr_end_dt
+		       ,ea.elapr_stts_cd ,ea.elapr_del_yn ,ea.elapr_emrg_yn ,ea.elapr_opnn_cn
+		       , row_number() over (order by elapr_no desc) AS rnum
+		    FROM (
+		        SELECT
+		            elapr_no ,doc_form_no ,emp_id ,co_cd ,atch_file_code ,elapr_nm ,elapr_cn ,elapr_bgng_dt ,elapr_mdfcn_dt ,elapr_end_dt
+		           ,elapr_stts_cd ,elapr_del_yn ,elapr_emrg_yn ,elapr_opnn_cn 
+		        FROM
+		            electronic_approval
+		        WHERE
+		            emp_id = #{empId}
+		            AND elapr_stts_cd = 'APRZ002'
+		            AND elapr_del_yn in ('N', 'n')
+		    ) ea
+		    LEFT JOIN employee emp on ea.emp_id = emp.emp_id
+		    LEFT JOIN document_form df on ea.doc_form_no = df.doc_form_no
+		    <include refid="elaprAllSearch"/>
+		) b
+		    
+		    ORDER BY b.elapr_no desc
+		) a
+  	</select>
+  	
+  	
+  	<!-- 결재 완료 문서함 리스트 -->
+  	<select id="selectMyCompleteList" parameterType="kr.or.ddit.comm.paging.vo.PaginationInfoVO" resultType="kr.or.ddit.comm.elapr.vo.ElaprVO">
+  		SELECT *
+		FROM (
+		    SELECT
+		        ea.elapr_no ,ea.doc_form_no ,df.doc_form_nm, ea.emp_id ,emp.emp_nm, ea.co_cd ,ea.atch_file_code ,ea.elapr_nm ,ea.elapr_cn ,ea.elapr_bgng_dt ,ea.elapr_mdfcn_dt ,ea.elapr_end_dt
+		       ,ea.elapr_stts_cd ,ea.elapr_del_yn ,ea.elapr_emrg_yn ,ea.elapr_opnn_cn
+		       , row_number() over (order by elapr_no desc) AS rnum
+		    FROM (
+		        SELECT
+		            elapr_no ,doc_form_no ,emp_id ,co_cd ,atch_file_code ,elapr_nm ,elapr_cn ,elapr_bgng_dt ,elapr_mdfcn_dt ,elapr_end_dt
+		           ,elapr_stts_cd ,elapr_del_yn ,elapr_emrg_yn ,elapr_opnn_cn 
+		        FROM
+		            electronic_approval
+		        WHERE
+		            emp_id = #{empId}
+		            AND elapr_stts_cd = 'APRZ002'
+		            AND elapr_del_yn in ('N', 'n')
+		    ) ea
+		    LEFT JOIN employee emp on ea.emp_id = emp.emp_id
+		    LEFT JOIN document_form df on ea.doc_form_no = df.doc_form_no
+		   	<include refid="elaprAllSearch"/>
+		) b
+		<![CDATA[
+		WHERE b.rnum >= #{startRow} and b.rnum <=#{endRow}
+		]]>
+		ORDER BY b.elapr_no desc
+  	</select>
+  	
+  	<!-- //////////////////// 개인 반려 문서함  ////////////////////  -->
+  	<!-- 개인 반려 문서함 페이징 -->
+  	<select id="selectMyRjctCount" parameterType="kr.or.ddit.comm.paging.vo.PaginationInfoVO" resultType="int">
+  		SELECT COUNT (*) total_count
+		FROM (
+		    SELECT *
+		FROM (
+		    SELECT
+		        ea.elapr_no ,ea.doc_form_no ,df.doc_form_nm, ea.emp_id ,emp.emp_nm, ea.co_cd ,ea.atch_file_code ,ea.elapr_nm ,ea.elapr_cn ,ea.elapr_bgng_dt ,ea.elapr_mdfcn_dt ,ea.elapr_end_dt
+		       ,ea.elapr_stts_cd ,ea.elapr_del_yn ,ea.elapr_emrg_yn ,ea.elapr_opnn_cn
+		       , row_number() over (order by elapr_no desc) AS rnum
+		    FROM (
+		        SELECT
+		            elapr_no ,doc_form_no ,emp_id ,co_cd ,atch_file_code ,elapr_nm ,elapr_cn ,elapr_bgng_dt ,elapr_mdfcn_dt ,elapr_end_dt
+		           ,elapr_stts_cd ,elapr_del_yn ,elapr_emrg_yn ,elapr_opnn_cn 
+		        FROM
+		            electronic_approval
+		        WHERE
+		            emp_id = #{empId}
+		            AND elapr_stts_cd = 'APRZ003'
+		            AND elapr_del_yn in ('N', 'n')
+		    ) ea
+		    LEFT JOIN employee emp on ea.emp_id = emp.emp_id
+		    LEFT JOIN document_form df on ea.doc_form_no = df.doc_form_no
+            <include refid="elaprAllSearch"/>
+		) b
+		    ORDER BY b.elapr_no desc
+		) a
+  	</select>
+  	
+  	
+  	<!-- 개인 반려 문서함 리스트 -->
+  	<select id="selectMyRjctList" parameterType="kr.or.ddit.comm.paging.vo.PaginationInfoVO" resultType="kr.or.ddit.comm.elapr.vo.ElaprVO">
+  		SELECT *
+		FROM (
+		    SELECT
+		        ea.elapr_no ,ea.doc_form_no ,df.doc_form_nm, ea.emp_id ,emp.emp_nm, ea.co_cd ,ea.atch_file_code ,ea.elapr_nm ,ea.elapr_cn ,ea.elapr_bgng_dt ,ea.elapr_mdfcn_dt ,ea.elapr_end_dt
+		       ,ea.elapr_stts_cd ,ea.elapr_del_yn ,ea.elapr_emrg_yn ,ea.elapr_opnn_cn
+		       , row_number() over (order by elapr_no desc) AS rnum
+		    FROM (
+		        SELECT
+		            elapr_no ,doc_form_no ,emp_id ,co_cd ,atch_file_code ,elapr_nm ,elapr_cn ,elapr_bgng_dt ,elapr_mdfcn_dt ,elapr_end_dt
+		           ,elapr_stts_cd ,elapr_del_yn ,elapr_emrg_yn ,elapr_opnn_cn 
+		        FROM
+		            electronic_approval
+		        WHERE
+		            emp_id = #{empId}
+		            AND elapr_stts_cd = 'APRZ003'
+		            AND elapr_del_yn in ('N', 'n')
+		    ) ea
+		    LEFT JOIN employee emp on ea.emp_id = emp.emp_id
+		    LEFT JOIN document_form df on ea.doc_form_no = df.doc_form_no
+			<include refid="elaprAllSearch"/>
+		) b
+		<![CDATA[
+		WHERE b.rnum >= #{startRow} and b.rnum <=#{endRow}
+		]]>
+		ORDER BY b.elapr_no desc
+  	</select>
+  	
+  	<!-- 전자결재 캘린더 연동 -->
+  	<select id="selectAllCalList" parameterType="kr.or.ddit.comm.paging.vo.PaginationInfoVO" resultType="kr.or.ddit.comm.elapr.vo.ElaprVO">
+  		SELECT *
+		FROM (
+		    SELECT
+		        ea.elapr_no ,ea.doc_form_no ,df.doc_form_nm, ea.emp_id ,emp.emp_nm, ea.co_cd ,ea.atch_file_code ,ea.elapr_nm ,ea.elapr_cn ,ea.elapr_bgng_dt ,ea.elapr_mdfcn_dt ,ea.elapr_end_dt
+		       ,ea.elapr_stts_cd ,ea.elapr_del_yn ,ea.elapr_emrg_yn ,ea.elapr_opnn_cn
+		       , row_number() over (order by elapr_no desc) AS rnum
+		    FROM (
+		        SELECT
+		            elapr_no ,doc_form_no ,emp_id ,co_cd ,atch_file_code ,elapr_nm ,elapr_cn ,elapr_bgng_dt ,elapr_mdfcn_dt ,elapr_end_dt
+		           ,elapr_stts_cd ,elapr_del_yn ,elapr_emrg_yn ,elapr_opnn_cn 
+		        FROM
+		            electronic_approval
+		        WHERE
+		            emp_id = #{empId}
+		            and elapr_del_yn in ('N', 'n')
+		    
+		    UNION ALL
+		    
+		    SELECT
+		        ea.elapr_no ,doc_form_no ,ea.emp_id ,co_cd ,atch_file_code ,elapr_nm ,elapr_cn ,elapr_bgng_dt ,elapr_mdfcn_dt ,elapr_end_dt
+		       ,elapr_stts_cd ,elapr_del_yn ,elapr_emrg_yn ,elapr_opnn_cn 
+		    FROM
+		        electronic_approval ea INNER JOIN approval_line al on(ea.elapr_no = al.elapr_no)
+		    WHERE al.emp_id = #{empId} 
+		        AND elapr_del_yn in ('N', 'n')
+		    ) ea
+		    LEFT JOIN employee emp on ea.emp_id = emp.emp_id
+		    LEFT JOIN document_form df on ea.doc_form_no = df.doc_form_no
+		) b
+		ORDER BY b.elapr_no desc
+  	</select>
+  	
+  	<!-- 메인페이지용 긴급문서함 리스트 출력 -->
+  	<select id="selectEmrgHomeList" parameterType="String" resultType="kr.or.ddit.comm.elapr.vo.ElaprVO">
+  		SELECT *
+		FROM (
+		    SELECT
+		        ea.elapr_no ,ea.doc_form_no ,df.doc_form_nm, ea.emp_id ,emp.emp_nm, ea.co_cd ,ea.atch_file_code ,ea.elapr_nm ,ea.elapr_cn ,ea.elapr_bgng_dt ,ea.elapr_mdfcn_dt ,ea.elapr_end_dt
+		       ,ea.elapr_stts_cd ,ea.elapr_del_yn ,ea.elapr_emrg_yn ,ea.elapr_opnn_cn
+		       , row_number() over (order by elapr_no desc) AS rnum
+		    FROM (
+		        SELECT
+		            elapr_no ,doc_form_no ,emp_id ,co_cd ,atch_file_code ,elapr_nm ,elapr_cn ,elapr_bgng_dt ,elapr_mdfcn_dt ,elapr_end_dt
+		           ,elapr_stts_cd ,elapr_del_yn ,elapr_emrg_yn ,elapr_opnn_cn 
+		        FROM
+		            electronic_approval
+		        WHERE
+		            emp_id = #{empId}
+		            and elapr_del_yn in ('N', 'n')
+		            and elapr_emrg_yn in ('Y', 'y')
+		    UNION ALL
+		    
+		    SELECT
+		        ea.elapr_no ,doc_form_no ,ea.emp_id ,co_cd ,atch_file_code ,elapr_nm ,elapr_cn ,elapr_bgng_dt ,elapr_mdfcn_dt ,elapr_end_dt
+		       ,elapr_stts_cd ,elapr_del_yn ,elapr_emrg_yn ,elapr_opnn_cn 
+		    FROM
+		        electronic_approval ea INNER JOIN approval_line al on(ea.elapr_no = al.elapr_no)
+		    WHERE al.emp_id = #{empId}
+		        AND elapr_del_yn in ('N', 'n')
+		        and elapr_emrg_yn in ('Y', 'y')
+		    ) ea
+		    LEFT JOIN employee emp on ea.emp_id = emp.emp_id
+		    LEFT JOIN document_form df on ea.doc_form_no = df.doc_form_no
+		) b
+		<![CDATA[
+			WHERE b.rnum <= 4
+		]]>
+		ORDER BY b.elapr_no desc
+  	</select>
+  	
+  	<!-- 메인페이지용 전체문서함 리스트 출력 -->
+  	<select id="selectAllHomeList" parameterType="String" resultType="kr.or.ddit.comm.elapr.vo.ElaprVO">
+  		SELECT *
+		FROM (
+		    SELECT
+		        ea.elapr_no ,ea.doc_form_no ,df.doc_form_nm, ea.emp_id ,emp.emp_nm, ea.co_cd ,ea.atch_file_code ,ea.elapr_nm ,ea.elapr_cn ,ea.elapr_bgng_dt ,ea.elapr_mdfcn_dt ,ea.elapr_end_dt
+		       ,ea.elapr_stts_cd ,ea.elapr_del_yn ,ea.elapr_emrg_yn ,ea.elapr_opnn_cn
+		       , row_number() over (order by elapr_no desc) AS rnum
+		    FROM (
+		        SELECT
+		            elapr_no ,doc_form_no ,emp_id ,co_cd ,atch_file_code ,elapr_nm ,elapr_cn ,elapr_bgng_dt ,elapr_mdfcn_dt ,elapr_end_dt
+		           ,elapr_stts_cd ,elapr_del_yn ,elapr_emrg_yn ,elapr_opnn_cn 
+		        FROM
+		            electronic_approval
+		        WHERE
+		            emp_id = #{empId}
+		            and elapr_del_yn in ('N', 'n')
+		    ) ea
+		    LEFT JOIN employee emp on ea.emp_id = emp.emp_id
+		    LEFT JOIN document_form df on ea.doc_form_no = df.doc_form_no
+		) b
+		<![CDATA[
+			WHERE b.rnum <= 4
+		]]>
+		ORDER BY b.elapr_no desc
+  	</select>
+  	
+  	<!-- 메인페이지용 참조 문서함 리스트 출력 -->
+  	<select id="selectRerncHomeList" parameterType="String" resultType="kr.or.ddit.comm.elapr.vo.ElaprVO">
+  		SELECT
+		    *
+		FROM (
+		    SELECT
+		        a.*, row_number() over (order by a.elapr_no desc) as rnum
+		    FROM (
+		        SELECT
+		            ea.elapr_no, ea.doc_form_no, ea.emp_id, ea.co_cd, ea.atch_file_code, ea.elapr_nm, 
+		            ea.elapr_cn, ea.elapr_bgng_dt, ea.elapr_mdfcn_dt, ea.elapr_end_dt, ea.elapr_stts_cd, 
+		            ea.elapr_del_yn, ea.elapr_emrg_yn, ea.elapr_opnn_cn, emp.emp_nm, df.doc_form_nm
+		        FROM
+		            electronic_approval ea
+		            JOIN employee emp ON ea.emp_id = emp.emp_id
+		            JOIN document_form df ON ea.doc_form_no = df.doc_form_no
+		            JOIN rernc r ON ea.elapr_no = r.elapr_no
+		        WHERE 
+		            r.emp_id = #{empId}
+		            AND r.rernc_del_yn IN ('N', 'n')
+		    ) a
+		) b
+		<![CDATA[
+			WHERE b.rnum <= 4
+		]]>
+		ORDER BY b.elapr_no desc
+  	</select>
+  	
+  	
+  	<!-- 메인페이지용 열람 문서함 리스트 출력 -->
+  	<select id="selectPrslHomeList" parameterType="String" resultType="kr.or.ddit.comm.elapr.vo.ElaprVO">
+  		SELECT
+		    *
+		FROM (
+		    SELECT
+		        a.*, row_number() over (order by a.elapr_no desc) as rnum
+		    FROM (
+		        SELECT
+		            ea.elapr_no, ea.doc_form_no, ea.emp_id, ea.co_cd, ea.atch_file_code, ea.elapr_nm, 
+		            ea.elapr_cn, ea.elapr_bgng_dt, ea.elapr_mdfcn_dt, ea.elapr_end_dt, ea.elapr_stts_cd, 
+		            ea.elapr_del_yn, ea.elapr_emrg_yn, ea.elapr_opnn_cn, emp.emp_nm, df.doc_form_nm
+		        FROM
+		            electronic_approval ea
+		            JOIN employee emp ON ea.emp_id = emp.emp_id
+		            JOIN document_form df ON ea.doc_form_no = df.doc_form_no
+		            JOIN elapr_prsl ep ON ea.elapr_no = ep.elapr_no
+		        WHERE 
+		            ep.emp_id = #{empId}
+		            AND ep.elapr_prsl_del_yn IN ('N', 'n')
+		    ) a
+		) b
+		<![CDATA[
+			WHERE b.rnum <= 4
+		]]>
+		ORDER BY b.elapr_no desc
+  	</select>
+  	
+  </mapper>

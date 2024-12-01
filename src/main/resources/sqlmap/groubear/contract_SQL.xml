@@ -1,0 +1,171 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+  PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+  "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper
+	namespace="kr.or.ddit.groubear.contract.mapper.IContractMapper">
+
+	<sql id="ctrtSearch">
+		<if test="searchWord != null">
+			and (
+<!-- 			ctrt_bgng_dt like '%' || #{searchWord} || '%' or -->
+<!-- 			ctrt_expry_dt like '%' || #{searchWord} || '%' or -->
+			co_nm like '%' || #{searchWord} || '%' or
+			ctrt_brno like '%' || #{searchWord} || '%' or
+			ctrt_nm like '%' || #{searchWord} || '%' or
+			status like '%' || #{searchWord} || '%' or
+			ctrt_amt like '%' || #{searchWord} || '%' or
+			(ctrt_pre || '개월') like '%' || #{searchWord} || '%' or
+			(CASE 
+            WHEN premium_yn = 'Y' THEN '프리미엄' 
+            WHEN premium_yn = 'N' THEN '일반' 
+            ELSE NULL 
+      	    END) like '%' || #{searchWord} || '%' or
+      	    (CASE 
+      	    <![CDATA[
+            WHEN TRUNC(CTRT_EXPRY_DT) - TRUNC(SYSDATE) > 0 THEN (TRUNC(CTRT_EXPRY_DT) - TRUNC(SYSDATE)) || '일' 
+            WHEN TRUNC(CTRT_EXPRY_DT) - TRUNC(SYSDATE) = 0 THEN '계약만료일' 
+            ELSE '종료' 
+     	 	 END) like '%' || #{searchWord} || '%' 
+            ]]>
+        )
+		</if>
+	</sql>
+	
+	<sql id="infoSort">
+		<if test="searchOrder != null">
+<!-- 	        <if test="searchOrder == 'periodUp'"> -->
+<!-- 	            ORDER BY a.EMP_MDFCN_YMD DESC, a.EMP_DEL_YN ASC -->
+<!-- 	        </if> -->
+<!-- 	        <if test="searchOrder == 'periodDown'"> -->
+<!-- 	            ORDER BY a.EMP_NM ASC, a.EMP_DEL_YN ASC -->
+<!-- 	        </if> -->
+	        <if test="searchOrder =='amtUp'">
+	            ORDER BY ctrt_amt ASC
+	        </if>
+	        <if test="searchOrder == 'amtDown'">
+	            ORDER BY ctrt_amt DESC
+	        </if>
+	        <if test="searchOrder == 'premiumYN'">
+	            ORDER BY premiumYN DESC
+	        </if>
+	    </if>
+  		<if test="searchOrder == null">
+			order by ctrt_no desc
+	    </if>
+	</sql>
+	
+	
+	
+	
+	
+	
+
+	<select id="currentContractStatus" resultType="kr.or.ddit.groubear.contract.vo.ContractVO">
+		SELECT PREMIUM_YN
+		FROM CONTRACT
+		<![CDATA[
+			WHERE CO_CD = #{coCd} AND CTRT_BGNG_DT <= SYSDATE AND SYSDATE <= CTRT_EXPRY_DT
+		]]>
+	</select>
+
+	<select id="selectCtrtCount" parameterType="kr.or.ddit.comm.paging.vo.PaginationInfoVO" resultType="int">
+		select count(ctrt_no) from
+		(select
+		ctrt_no, ctrt_bgng_dt, ctrt_expry_dt, co_nm, ctrt_nm, ctrt_brno, ctrt_pre, ctrt_amt, premium_yn,
+		CASE WHEN (CTRT_EXPRY_DT - SYSDATE) > 0 THEN '계약중' ELSE '계약만료' END AS
+		status
+		from contract
+		) c
+		where 1=1
+		<include refid="ctrtSearch" />
+	</select>
+
+	<insert id="insertCtrt" parameterType="kr.or.ddit.groubear.contract.vo.ContractVO">
+		insert into contract(
+		ctrt_no, co_nm, ctrt_bgng_dt, ctrt_expry_dt, ctrt_brno, ctrt_nm, ctrt_amt
+		)values(
+		seq_ctrt_no.nextval, #{coNm}, #{ctrtBgngDt},
+		ADD_MONTHS(SYSDATE,#{ctrtPre}), #{ctrtBrno}, #{ctrtNm}, #{ctrtAmt}
+		)
+	</insert>
+
+	<select id="selectCtrtList" parameterType="kr.or.ddit.comm.paging.vo.PaginationInfoVO" resultType="kr.or.ddit.groubear.contract.vo.ContractVO">
+
+		select
+		b.*
+		from(
+		select
+		a.*, row_number() over (<include refid="infoSort"/>) rnum
+		from(
+		select ctrt_no, ctrt_bgng_dt, ctrt_expry_dt, co_nm, ctrt_nm, ctrt_brno, ctrt_pre, ctrt_amt, premium_yn,
+		status
+		from
+		(select
+		ctrt_no, ctrt_bgng_dt, ctrt_expry_dt, co_nm, ctrt_nm, ctrt_brno, ctrt_pre, ctrt_amt, premium_yn,
+		CASE WHEN (CTRT_EXPRY_DT - SYSDATE) > 0 THEN '계약중' ELSE '계약만료' END AS
+		status
+		from contract
+		) c
+		where 1=1
+		<include refid="ctrtSearch" />
+		order by status desc
+		) a
+		) b
+           <![CDATA[
+           where b.rnum >= #{startRow} and b.rnum <= #{endRow}
+           ]]>
+	</select>
+
+	<select id="detail" parameterType="kr.or.ddit.groubear.contract.vo.ContractVO" resultType="kr.or.ddit.groubear.contract.vo.ContractVO">
+		select *
+		from contract
+		where ctrt_no = #{ctrtNo}
+	</select>
+
+	<select id="comDetail" parameterType="kr.or.ddit.groubear.contract.vo.ContractVO" resultType="kr.or.ddit.groubear.contract.vo.ContractVO">
+		SELECT *
+		FROM company b
+		WHERE b.co_cd IN (
+		SELECT a.co_cd
+		FROM contract a
+		WHERE a.ctrt_no = #{ctrtNo}
+		)
+	</select>
+
+	<insert id="insertContract" parameterType="kr.or.ddit.groubear.contract.vo.ContractVO">
+		<selectKey keyProperty="coCd" resultType="string"
+			order="BEFORE">
+			SELECT CO_CD FROM COMPANY WHERE CO_BRNO = #{ctrtBrno}
+		</selectKey>
+		INSERT INTO CONTRACT
+		(CTRT_NO,
+		CO_NM,
+		CTRT_BGNG_DT,
+		CTRT_EXPRY_DT,
+		CTRT_PRE,
+		CTRT_DT,
+		CTRT_AMT,
+		CTRT_NM,
+		CTRT_BRNO,
+		CO_CD,
+		PREMIUM_YN)
+
+		VALUES
+		(SEQ_CTRT_NO.nextval,
+		#{coNm},
+		SYSDATE,
+		ADD_MONTHS(SYSDATE,#{ctrtPre}),
+		#{ctrtPre},
+		SYSDATE,
+		#{ctrtAmt},
+		#{ctrtNm},
+		#{ctrtBrno},
+		#{coCd},
+		#{premiumYn})
+	</insert>
+
+
+
+</mapper>

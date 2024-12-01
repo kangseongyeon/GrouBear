@@ -1,0 +1,98 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+  PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+  "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+  <mapper namespace="kr.or.ddit.groubear.log.mapper.ILogMapper">
+  
+   <sql id="logSearch">
+      <if test="searchWord != null">
+         and (
+         		b.log_crt_dt like '%' || #{searchWord} || '%' or
+         		b.emp_nm like '%' || #{searchWord} || '%' or
+         		c.CO_NM like '%' || #{searchWord} || '%' or
+         		d.DEPT_NM like '%' || #{searchWord} || '%' or
+         		b.emp_id like '%' || #{searchWord} || '%' or
+         		b.log_ip like '%' || #{searchWord} || '%' or
+         		b.log_detail like '%' || #{searchWord} || '%'
+         	)
+      </if>
+   </sql>
+  
+  <insert id="insert" parameterType="LogVO">
+  	insert into log(
+  	 log_co_cd, emp_nm, jbgd_cd, log_crt_dt, log_ip, log_detail, emp_id
+  	)values(
+  		seq_log_sn.nextval, #{empNm}, #{jbgdCd}, #{logCrtDt}, #{logIp}, #{logDetail}, #{empId}
+  	)
+  </insert>
+  
+  
+  <select id="selectLogCount" parameterType="PaginationInfoVO" resultType="int">
+	select count(log_co_cd)
+	from log b
+	LEFT JOIN employee e ON b.emp_id = e.emp_id  -- employee 테이블과 조인
+    LEFT JOIN company c ON e.co_cd = c.co_cd    -- company 테이블과 조인
+    LEFT JOIN department d ON e.dept_cd = d.dept_cd  -- department 테이블과 조인
+	where 1=1
+	<include refid="logSearch"/>
+</select>
+
+	<select id="selectLogList" parameterType="PaginationInfoVO" resultType="LogVO">
+  select * 
+  from
+   (     SELECT 
+    rownum rnum, b.*,
+    c.CO_NM AS company_name,
+    d.DEPT_NM AS department_name
+FROM (
+    SELECT
+            a.*
+    FROM (
+        SELECT
+            l.log_co_cd, l.emp_nm, l.log_crt_dt, l.log_ip, l.log_detail, l.emp_id
+        FROM 
+            log l
+        ORDER BY 
+           l.log_crt_dt DESC
+    ) a
+) b
+LEFT JOIN employee e ON b.emp_id = e.emp_id
+LEFT JOIN company c ON e.co_cd = c.co_cd
+LEFT JOIN department d ON e.dept_cd = d.dept_cd
+        WHERE 
+            1=1
+                <include refid="logSearch"/>)
+    <![CDATA[
+        where rnum >= #{startRow} AND rnum <= #{endRow}
+    ]]>
+</select>
+
+<select id="selectLogCountByDateRange" parameterType="PaginationInfoVO" resultType="int">
+    SELECT COUNT(log_co_cd)
+    FROM log
+    WHERE log_crt_dt BETWEEN #{startDate} AND #{endDate}
+</select>
+
+<select id="selectLogListByDateRange" parameterType="PaginationInfoVO" resultType="LogVO">
+    SELECT b.*, c.CO_NM AS company_name, d.DEPT_NM AS department_name
+    FROM (
+        SELECT a.*, ROW_NUMBER() OVER (ORDER BY a.log_co_cd DESC) AS rnum
+        FROM (
+            SELECT log_co_cd, emp_nm, log_crt_dt, log_ip, log_detail, emp_id
+            FROM log
+            WHERE log_crt_dt BETWEEN #{startDate} AND #{endDate}
+            ORDER BY log_crt_dt DESC
+        ) a
+    ) b
+    LEFT JOIN employee e ON b.emp_id = e.emp_id
+    LEFT JOIN company c ON e.co_cd = c.co_cd
+    LEFT JOIN department d ON e.dept_cd = d.dept_cd
+     <![CDATA[
+    WHERE b.rnum >= #{startRow} AND b.rnum <= #{endRow}
+     ]]>
+</select>
+
+  
+  
+  
+  </mapper>

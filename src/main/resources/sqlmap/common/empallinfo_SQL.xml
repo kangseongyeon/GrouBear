@@ -1,0 +1,73 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+  PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+  "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+  <mapper namespace="kr.or.ddit.comm.empallinfo.mapper.IEmpAllInfoMapper">
+  
+	<!-- 사원 정보 가져오기 (회사정보, 사원정보, 부서정보, 팀정보, 권한 등) -->
+	<select id="selectEmpImpl" parameterType="kr.or.ddit.comm.security.vo.EmployeeVO" resultType="kr.or.ddit.comm.empallinfo.vo.EmployeeAllVO">
+		SELECT E.EMP_ID, E.CO_CD, E.DEPT_CD, E.EMP_EML_ADDR, E.EMP_NM, E.EMP_NO, E.EMP_ZIP, 
+		       E.EMP_ADDR, E.EMP_DADDR, E.EMP_TELNO, E.EMP_BRDT, EMP_GNDR, E.EMP_NTN, E.EMP_JNCMP_YMD, 
+		       E.EMP_RSGNTN_YMD, E.EMP_CRT_YMD, E.EMP_MDFCN_YMD, E.ENABLED, E.EMP_DLN_YN, E.IMG_FILE_URL, E.EMP_DEL_YN,
+		       E.TEAM_CD, C.CO_NM, C.CO_REG_DT, C.CO_CNT, C.CO_BRNO, C.CO_ZIP, C.CO_ADDR, C.CO_DADDR, C.CO_TEL, C.CEO_NM,
+		       D.DEPT_NM, D.DEPT_CRT_DT, DEPT_ACTVTN_YN, D.DEPT_IMG_FILE_URL, T.TEAM_NM, T.TEAM_CRT_DT, T.TEAM_ACTVTN_YN,
+		       E.JBGD_CD, J.JBGD_NM, A.AUTHRITY_NO, A.AUTHRITY_NM
+		FROM 
+		    EMPLOYEE E
+		LEFT JOIN 
+		    COMPANY C ON E.CO_CD = C.CO_CD
+		LEFT JOIN 
+		    DEPARTMENT D ON E.DEPT_CD = D.DEPT_CD
+		LEFT JOIN 
+		    TEAM T ON E.TEAM_CD = T.TEAM_CD
+		LEFT JOIN 
+		    JOBGRADE J ON E.JBGD_CD = J.JBGD_CD
+        LEFT JOIN 
+            AUTHRITY A ON E.EMP_ID = A.EMP_ID
+		WHERE 
+		    E.EMP_ID = #{empId}
+	</select>
+  
+	<!-- 소속 기업의 기업 관리자 정보 가져오기 -->
+	<select id="selectComManagerEmpImpl" parameterType="String" resultType="kr.or.ddit.comm.empallinfo.vo.EmployeeAllVO">
+		SELECT E.EMP_ID, E.CO_CD, E.DEPT_CD, E.EMP_EML_ADDR, E.EMP_NM, E.EMP_NO, E.EMP_ZIP, 
+		       E.EMP_ADDR, E.EMP_DADDR, E.EMP_TELNO, E.EMP_BRDT, EMP_GNDR, E.EMP_NTN, E.EMP_JNCMP_YMD, 
+		       E.EMP_RSGNTN_YMD, E.EMP_CRT_YMD, E.EMP_MDFCN_YMD, E.ENABLED, E.EMP_DLN_YN, E.IMG_FILE_URL, E.EMP_DEL_YN,
+		       E.TEAM_CD, C.CO_NM, C.CO_REG_DT, C.CO_CNT, C.CO_BRNO, C.CO_ZIP, C.CO_ADDR, C.CO_DADDR, C.CO_TEL, C.CEO_NM,
+		       D.DEPT_NM, D.DEPT_CRT_DT, DEPT_ACTVTN_YN, D.DEPT_IMG_FILE_URL, T.TEAM_NM, T.TEAM_CRT_DT, T.TEAM_ACTVTN_YN,
+		       E.JBGD_CD, J.JBGD_NM, A.AUTHRITY_NO, A.AUTHRITY_NM
+		FROM 
+		    EMPLOYEE E
+		LEFT JOIN 
+		    COMPANY C ON E.CO_CD = C.CO_CD
+		LEFT JOIN 
+		    DEPARTMENT D ON E.DEPT_CD = D.DEPT_CD
+		LEFT JOIN 
+		    TEAM T ON E.TEAM_CD = T.TEAM_CD
+		LEFT JOIN 
+		    JOBGRADE J ON E.JBGD_CD = J.JBGD_CD
+		LEFT JOIN 
+		    AUTHRITY A ON E.EMP_ID = A.EMP_ID
+		WHERE 
+		    E.CO_CD = #{coCd} and
+		    A.AUTHRITY_NM = 'ROLE_COMPANY'
+	</select>
+  
+	<!-- 소속 기업의 기업 관리자 정보 가져오기 -->
+	<select id="selectGroubearEmpList" resultType="kr.or.ddit.comm.empallinfo.vo.EmployeeAllVO">
+		SELECT E.EMP_ID, E.CO_CD, E.DEPT_CD, E.EMP_EML_ADDR, E.EMP_NM, E.EMP_NO, E.EMP_ZIP, 
+		       E.EMP_ADDR, E.EMP_DADDR, E.EMP_TELNO, E.EMP_BRDT, EMP_GNDR, E.EMP_NTN, E.EMP_JNCMP_YMD, 
+		       E.EMP_RSGNTN_YMD, E.EMP_CRT_YMD, E.EMP_MDFCN_YMD, E.ENABLED, E.EMP_DLN_YN, E.IMG_FILE_URL, E.EMP_DEL_YN,
+		       E.TEAM_CD, C.CO_NM, C.CO_REG_DT, C.CO_CNT, C.CO_BRNO, C.CO_ZIP, C.CO_ADDR, C.CO_DADDR, C.CO_TEL, C.CEO_NM,
+		       A.AUTHRITY_NO, A.AUTHRITY_NM
+		FROM 
+		    EMPLOYEE E
+		LEFT JOIN 
+		    COMPANY C ON E.CO_CD = C.CO_CD
+		LEFT JOIN 
+		    AUTHRITY A ON E.EMP_ID = A.EMP_ID
+		WHERE 
+		    A.AUTHRITY_NM = 'ROLE_GROUBEAR'
+	</select>
+	
+  </mapper>

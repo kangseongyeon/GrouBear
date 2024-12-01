@@ -1,0 +1,247 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+  PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+  "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+  
+  <mapper namespace="kr.or.ddit.comm.form.mapper.IFormMapper">
+	
+	<!-- 리스트에서 검색어로 조회 -->
+	<sql id="formSearch">
+      <if test="searchWord != null">
+         and (
+         		emp_id like '%' || #{searchWord} || '%' or
+         		doc_form_nm like '%' || #{searchWord} || '%' or
+         		doc_form_expln like '%' || #{searchWord} || '%' or
+         		doc_form_crt_dt like '%' || #{searchWord} || '%' or
+         		doc_form_mdfcn_dt like '%' || #{searchWord} || '%' or
+         		doc_form_knd_nm like '%' || #{searchWord} || '%'
+         	)
+      </if>
+   </sql>
+	
+	<!-- 양식 등록 -->
+	<insert id="formInsert" parameterType="kr.or.ddit.comm.form.vo.FormVO">
+		insert into DOCUMENT_FORM (
+			DOC_FORM_NO,
+			EMP_ID,
+			DOC_FORM_NM,
+			DOC_FORM_EXPLN,
+			DOC_FORM_CN,
+			
+			DOC_FORM_CRT_DT,
+			DOC_FORM_MDFCN_DT,
+			DOC_FORM_DEL_YN,
+			
+			DOC_FORM_KND_NM,
+			DOC_FORM_KND_UP,
+			CO_CD
+		) values (
+			seq_documentForm.nextval,
+			#{empId},
+			#{docFormNm},
+			#{docFormExpln},
+			#{docFormCn},
+			
+			SYSDATE,
+			SYSDATE,
+			'N',
+			
+			#{docFormKndNm},
+			#{docFormKndUp},
+			#{coCd}
+		)
+	</insert>
+	
+	<!-- 양식 전체 게시물 수 조회 (그룹웨어 관리자) -->
+	<select id="groubearSelectFormCount" parameterType="kr.or.ddit.comm.paging.vo.PaginationInfoVO" resultType="int">
+		select count(DOC_FORM_NO)
+		from DOCUMENT_FORM
+		where co_cd = #{coCd} and DOC_FORM_KND_NM is not null and DOC_FORM_DEL_YN = 'N'
+		<include refid="formSearch"/>
+	</select>
+		
+	<!-- 양식 리스트 조회 (그룹웨어 관리자) -->
+	<select id="groubearSelectFormList" parameterType="kr.or.ddit.comm.paging.vo.PaginationInfoVO" resultType="kr.or.ddit.comm.form.vo.FormVO">
+		select b.*
+		from (
+		    select a.*, row_number() over (order by DOC_FORM_KND_NM desc) rnum
+		    from (
+		        select 
+		            DOC_FORM_NO, EMP_ID, CO_CD,
+		            DOC_FORM_NM, DOC_FORM_EXPLN, DOC_FORM_CN,
+		            DOC_FORM_CRT_DT, DOC_FORM_MDFCN_DT, DOC_FORM_DEL_YN,
+		            DOC_FORM_KND_NM
+		        from DOCUMENT_FORM
+		        where co_cd = #{coCd} and DOC_FORM_DEL_YN = 'N' and DOC_FORM_KND_NM is not null
+		        <include refid="formSearch"/>
+		        order by DOC_FORM_KND_NM desc
+		        ) a
+		    ) b
+		<![CDATA[
+		where b.rnum >= #{startRow} and b.rnum <= #{endRow}
+		]]>
+		order by DOC_FORM_CRT_DT desc
+	</select>
+	
+	<!-- 양식 전체 게시물 수 조회 (기업 관리자) -->
+	<select id="companySelectFormCount" parameterType="kr.or.ddit.comm.paging.vo.PaginationInfoVO" resultType="int">
+		select count(DOC_FORM_NO)
+		from DOCUMENT_FORM
+		where co_cd in ('cp1', #{coCd}) and DOC_FORM_KND_NM is not null and DOC_FORM_DEL_YN = 'N'
+		<include refid="formSearch"/>
+	</select>
+		
+	<!-- 양식 리스트 조회 (기업 관리자) -->
+	<select id="companySelectFormList" parameterType="kr.or.ddit.comm.paging.vo.PaginationInfoVO" resultType="kr.or.ddit.comm.form.vo.FormVO">
+		select b.*
+		from (
+		    select a.*, row_number() over (order by DOC_FORM_KND_NM desc) rnum
+		    from (
+		        select 
+		            DOC_FORM_NO, EMP_ID, CO_CD,
+		            DOC_FORM_NM, DOC_FORM_EXPLN, DOC_FORM_CN,
+		            DOC_FORM_CRT_DT, DOC_FORM_MDFCN_DT, DOC_FORM_DEL_YN,
+		            DOC_FORM_KND_NM
+		        from DOCUMENT_FORM
+		        where co_cd in ('cp1', #{coCd}) and DOC_FORM_DEL_YN = 'N' and DOC_FORM_KND_NM is not null
+		        <include refid="formSearch"/>
+		        order by DOC_FORM_KND_NM desc
+		        ) a
+		    ) b
+		<![CDATA[
+		where b.rnum >= #{startRow} and b.rnum <= #{endRow}
+		]]>
+		order by DOC_FORM_CRT_DT desc
+	</select>
+		
+	<!-- 양식 상세 조회 -->
+	<select id="selectForm" parameterType="int" resultType="kr.or.ddit.comm.form.vo.FormVO">
+		select *
+		from DOCUMENT_FORM
+		where DOC_FORM_NO = #{docFormNo}
+	</select>
+		
+	<!-- 양식 수정 -->
+	<update id="formUpdate" parameterType="kr.or.ddit.comm.form.vo.FormVO">
+		update DOCUMENT_FORM
+		set DOC_FORM_NM = #{docFormNm}, 
+		    DOC_FORM_EXPLN = #{docFormExpln}, 
+		    DOC_FORM_KND_NM = #{docFormKndNm}, 
+		    DOC_FORM_CN = #{docFormCn},  
+		    DOC_FORM_MDFCN_DT = sysdate
+		where DOC_FORM_NO = #{docFormNo}
+	</update>
+		
+	<!-- 양식 삭제 -->
+	<update id="formDelete" parameterType="int">
+		update DOCUMENT_FORM
+		set DOC_FORM_DEL_YN = 'Y'
+		where DOC_FORM_NO = #{docFormNo}
+	</update>
+		
+	<!-- Jstree에 출력할 form 계층형 데이터 (그룹웨어 관리자) -->
+	<select id="groubearSelectFormListJstree" parameterType="string" resultType="kr.or.ddit.comm.form.vo.FormVO">
+		select 
+		    DOC_FORM_NO, NVL(DOC_FORM_KND_UP, '#') AS DOC_FORM_KND_UP, EMP_ID, CO_CD,
+		    DOC_FORM_NM, DOC_FORM_EXPLN, DOC_FORM_CN,
+		    DOC_FORM_CRT_DT, DOC_FORM_MDFCN_DT, DOC_FORM_DEL_YN,
+		    DOC_FORM_KND_NM
+		from DOCUMENT_FORM
+		where co_cd = #{coCd} and DOC_FORM_DEL_YN = 'N'
+		order by DOC_FORM_KND_UP asc
+	</select>
+		
+	<!-- Jstree에 출력할 form 계층형 데이터 (기업 관리자) -->
+	<select id="companySelectFormListJstree" parameterType="string" resultType="kr.or.ddit.comm.form.vo.FormVO">
+		select 
+		    DOC_FORM_NO, NVL(DOC_FORM_KND_UP, '#') AS DOC_FORM_KND_UP, EMP_ID, CO_CD,
+		    DOC_FORM_NM, DOC_FORM_EXPLN, DOC_FORM_CN,
+		    DOC_FORM_CRT_DT, DOC_FORM_MDFCN_DT, DOC_FORM_DEL_YN,
+		    DOC_FORM_KND_NM
+		from DOCUMENT_FORM
+		where co_cd in ('cp1', #{coCd}) and DOC_FORM_DEL_YN = 'N'
+		order by DOC_FORM_KND_UP asc
+	</select>
+		
+	<!-- 양식 종류 추가 -->
+  	<insert id="docFormKndNmAdd" parameterType="kr.or.ddit.comm.form.vo.FormVO" useGeneratedKeys="true">
+ 		<selectKey keyProperty="docFormNo" resultType="int" order="BEFORE">
+ 			select seq_documentForm.nextval from dual
+ 		</selectKey>
+		insert into DOCUMENT_FORM (
+		    DOC_FORM_NO,
+		    EMP_ID,
+		    DOC_FORM_NM,
+		    DOC_FORM_CN,
+		    DOC_FORM_CRT_DT,
+		    DOC_FORM_MDFCN_DT,
+		    DOC_FORM_DEL_YN,
+		    CO_CD
+		    <if test="docFormKndUp != '99999'">
+                ,DOC_FORM_KND_UP
+            </if>
+		) values (
+			#{docFormNo},
+			#{empId},
+			#{docFormNm},
+			'0',
+			SYSDATE,
+			SYSDATE,
+			'N',
+			#{coCd}
+			<if test="docFormKndUp != '99999'">
+                ,#{docFormKndUp}
+            </if>
+		)
+	</insert>
+		
+	<!-- 양식 종류 가져오기 (그룹웨어 관리자) -->
+<!-- 	<select id="groubearSelectDocFormKndNm" resultType="kr.or.ddit.comm.form.vo.FormVO" parameterType="kr.or.ddit.comm.form.vo.FormVO">
+		select DOC_FORM_NO, DOC_FORM_NM
+		from DOCUMENT_FORM
+		where co_cd = #{coCd} and DOC_FORM_KND_NM is null
+	</select> -->
+	<select id="groubearSelectDocFormKndNm" resultType="kr.or.ddit.comm.form.vo.FormVO" parameterType="kr.or.ddit.comm.form.vo.FormVO">
+		SELECT DOC_FORM_NO,
+		    CASE WHEN DOC_FORM_KND_UP IS NOT NULL THEN 'ㄴ' || DOC_FORM_NM
+		         ELSE DOC_FORM_NM
+		    END AS DOC_FORM_NM, EMP_ID, CO_CD, DOC_FORM_KND_UP, LEVEL AS hierarchy_level
+		FROM DOCUMENT_FORM
+		where co_cd = #{coCd} and DOC_FORM_KND_NM is null
+		START WITH DOC_FORM_KND_UP IS NULL
+		CONNECT BY PRIOR DOC_FORM_NO = DOC_FORM_KND_UP
+		ORDER SIBLINGS BY DOC_FORM_CRT_DT ASC
+	</select>
+		
+	<!-- 양식 종류 가져오기 (기업 관리자) -->
+<!-- 	<select id="companySelectDocFormKndNm" resultType="kr.or.ddit.comm.form.vo.FormVO" parameterType="kr.or.ddit.comm.form.vo.FormVO">
+		select DOC_FORM_NO, DOC_FORM_NM
+		from DOCUMENT_FORM
+		where co_cd in ('cp1', #{coCd}) and DOC_FORM_KND_NM is null
+	</select> -->
+	<select id="companySelectDocFormKndNm" resultType="kr.or.ddit.comm.form.vo.FormVO" parameterType="kr.or.ddit.comm.form.vo.FormVO">
+		SELECT DOC_FORM_NO,
+		    CASE WHEN DOC_FORM_KND_UP IS NOT NULL THEN 'ㄴ' || DOC_FORM_NM
+		         ELSE DOC_FORM_NM
+		    END AS DOC_FORM_NM, EMP_ID, CO_CD, DOC_FORM_KND_UP, LEVEL AS hierarchy_level
+		FROM DOCUMENT_FORM
+		WHERE CO_CD IN ('cp1', #{coCd}) AND DOC_FORM_KND_NM IS NULL
+		START WITH DOC_FORM_KND_UP IS NULL
+		CONNECT BY PRIOR DOC_FORM_NO = DOC_FORM_KND_UP
+		ORDER SIBLINGS BY DOC_FORM_CRT_DT ASC
+	</select>
+		
+	<!-- 양식 종류 삭제하기 -->
+	<delete id="docFormKndNmDel" parameterType="kr.or.ddit.comm.form.vo.FormVO">
+		delete from DOCUMENT_FORM
+		where DOC_FORM_NO = #{docFormNo}
+	</delete>
+		
+	<!-- 양식 종류 삭제 전, 하위 글 유무 확인하기 -->
+	<select id="docFormKndWriteCheck" parameterType="int" resultType="int">
+		select count(DOC_FORM_NO)
+		from DOCUMENT_FORM
+		where DOC_FORM_KND_UP = #{docFormNo}
+	</select>
+	
+  </mapper>

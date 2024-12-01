@@ -1,0 +1,120 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+  PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+  "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+  
+  <mapper namespace="kr.or.ddit.comm.project.mapper.IProjectTaskMapper">
+  	
+  	<resultMap type="kr.or.ddit.comm.project.vo.ProjectTaskVO" id="projectTaskMap">
+  		<id property="proTaskNo" column="pro_task_no"/>
+  		<result property="proTaskNo" column="pro_task_no" />
+		<result property="proNo" column="pro_no" />
+		<result property="empId" column="emp_id" />
+		<result property="proTaskNm" column="pro_task_nm" />
+		<result property="proTaskCn" column="pro_task_cn" />
+		<result property="proTaskSttsCd" column="pro_task_stts_cd" />
+		<result property="proTaskBangDt" column="pro_task_bang_dt" />
+		<result property="proTaskMdfcnDt" column="pro_task_mdfcn_dt" />
+		<result property="proTaskStartDt" column="pro_task_start_dt" />
+		<result property="proTaskEndDt" column="pro_task_end_dt" />
+		<result property="proTaskPregrt" column="pro_task_pregrt" />
+		<result property="proTaskDelYn" column="pro_task_del_yn" />
+  	</resultMap>
+  	
+  	
+  	<!-- 일감 리스트 출력 -->
+  	<select id="selectProTaskList" parameterType="int" resultMap="projectTaskMap">
+  		SELECT
+		    pro_task_no, pro_task_nm, pro_task_cn, pt.emp_id, pro_task_stts_cd, pro_task_pregrt,
+		    emp.emp_nm, emp.img_file_url,
+		    TO_CHAR(pro_task_bang_dt, 'YYYY-MM-DD HH24:MI') AS pro_task_bgng_dt, 
+		    TO_CHAR(pro_task_start_dt, 'YYYY-MM-DD HH24:MI') AS pro_task_start_dt, 
+		    TO_CHAR(pro_task_end_dt, 'YYYY-MM-DD HH24:MI') AS pro_task_end_dt
+		FROM project_task pt
+		    LEFT JOIN employee emp ON pt.emp_id = emp.emp_id 
+            LEFT JOIN project p ON p.pro_no = pt.pro_no
+		WHERE p.pro_no = #{proNo}
+			AND pro_task_del_yn in ('N', 'n') 
+		ORDER BY pro_task_no desc
+  	</select>
+  	
+  	
+  	<!-- 일감 추가 -->
+  	<insert id="insertProTask" parameterType="kr.or.ddit.comm.project.vo.ProjectTaskVO" useGeneratedKeys="true">
+  		<selectKey keyProperty="proTaskNo" resultType="int" order="BEFORE">
+  			select seq_project_task.nextval from dual
+  		</selectKey>
+			INSERT INTO project_task (
+			    pro_task_no ,pro_no ,emp_id ,pro_task_nm ,pro_task_cn ,pro_task_stts_cd ,
+			    pro_task_bang_dt ,pro_task_mdfcn_dt , pro_task_start_dt, pro_task_end_dt ,pro_task_del_yn, pro_task_pregrt
+			) VALUES (
+			    #{proTaskNo}, #{proNo}, #{empId}, #{proTaskNm}, #{proTaskCn}, 'TASK001', 
+			    sysdate, sysdate, to_date(#{proTaskStartDt}, 'YYYY-MM-DD"T"HH24:MI'), to_date(#{proTaskEndDt}, 'YYYY-MM-DD"T"HH24:MI'),'N', 0
+			)
+  	</insert>
+  	
+  	
+  	<!-- 일감 수정폼 -->
+  	<select id="selectProTask" parameterType="int" resultMap="projectTaskMap">
+  		SELECT
+		    pro_task_no ,pro_no ,emp_id ,pro_task_nm ,pro_task_cn ,pro_task_stts_cd 
+		    ,pro_task_bang_dt ,pro_task_mdfcn_dt ,pro_task_start_dt ,pro_task_end_dt ,pro_task_del_yn, pro_task_pregrt
+		FROM project_task
+		WHERE pro_task_no = #{proTaskNo}
+			AND pro_task_del_yn in ('N', 'n')
+  	</select>
+  	
+  	
+  	<!-- 일감 수정 -->
+  	<update id="updateProTask" parameterType="kr.or.ddit.comm.project.vo.ProjectTaskVO">
+  		UPDATE project_task
+		SET
+		    pro_task_stts_cd = #{proTaskSttsCd},
+		    pro_task_nm = #{proTaskNm},
+		    pro_task_cn = #{proTaskCn},
+		    pro_task_mdfcn_dt = sysdate,
+		    pro_task_start_dt = to_date(#{proTaskStartDt}, 'YYYY-MM-DD"T"HH24:MI'),  
+		    pro_task_end_dt =  to_date(#{proTaskEndDt}, 'YYYY-MM-DD"T"HH24:MI'), 
+			emp_id = #{empId},
+			pro_task_pregrt = #{proTaskPregrt}
+		WHERE pro_task_no = #{proTaskNo}
+  	</update>
+  	
+  	
+  	<!-- 일감 삭제 -->
+  	<update id="deleteProTask" parameterType="kr.or.ddit.comm.project.vo.ProjectTaskVO">
+  		UPDATE project_task
+		SET
+		    pro_task_del_yn = 'y'
+		WHERE pro_task_no = #{proTaskNo}
+  	</update>
+  	
+  	
+  	<!-- 프로젝트 - 일감 연결 -->
+  	<select id="selectProNoByTaskNo" parameterType="int" resultType="int">
+  		SELECT pro_no
+  		FROM project_task
+  		WHERE pro_task_no = #{proTaskNo}
+  	</select>
+  	
+  	
+  	<!-- 일감 상태 변경 -->
+  	<update id="updateProTaskStts" parameterType="kr.or.ddit.comm.project.vo.ProjectTaskVO" >
+  		UPDATE project_task
+  		SET
+  			pro_task_stts_cd = #{proTaskSttsCd},
+  			pro_task_pregrt = #{proTaskPregrt}
+  		WHERE pro_task_no = #{proTaskNo}
+  	</update>
+  	
+  	
+  	<!-- 간트차트 리스트 -->	
+  	<select id="selectGanttList" parameterType="int" resultMap="projectTaskMap">
+  		SELECT
+		    pro_task_no, pro_task_nm, pro_task_cn, pro_task_start_dt, pro_task_end_dt, pro_task_pregrt
+		FROM project_task
+		WHERE pro_no = #{proNo} and pro_task_del_yn in ('N', 'n') 
+		ORDER BY pro_task_no
+  	</select>
+  	
+  </mapper>

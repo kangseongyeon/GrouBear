@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+  PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+  "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+  
+  <mapper namespace="kr.or.ddit.groubear.log.mapper.ILogDownloadMapper">
+  
+  <select id="createExcelTemplate" resultType="kr.or.ddit.groubear.log.vo.LogVO">
+		select log_co_cd, emp_nm, jbgd_cd, log_crt_dt, log_ip, log_detail, emp_id
+			from log
+	</select>
+  
+  </mapper>

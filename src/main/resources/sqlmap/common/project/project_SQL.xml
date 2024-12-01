@@ -1,0 +1,233 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+  PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+  "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+  
+  <mapper namespace="kr.or.ddit.comm.project.mapper.IProjectMapper">
+  	
+  	<resultMap type="kr.or.ddit.comm.project.vo.ProjectVO" id="projectMap">
+  		<id property="proNo" column="pro_no"/>
+  		<result property="proNo" column="pro_no" />
+		<result property="coCd" column="co_cd" />
+		<result property="empId" column="emp_id" />
+		<result property="proSttsCd" column="pro_stts_cd" />
+		<result property="proNm" column="pro_nm" />
+		<result property="proCn" column="pro_cn" />
+		<result property="proBgngDt" column="pro_bgng_dt" />
+		<result property="proMdfcnDt" column="pro_mdfcn_dt" />
+		<result property="proStartDt" column="pro_start_dt" />
+		<result property="proEndDt" column="pro_end_dt" />
+		<result property="proPregrt" column="pro_pregrt" />
+		<result property="proDelYn" column="pro_del_yn" />
+		<collection property="participantList" resultMap="participantMap"/>
+  	</resultMap>
+  	
+  	<resultMap type="kr.or.ddit.comm.project.vo.ProjectParticipantVO" id="participantMap">
+  		<result property="proNo" column="pro_no" />
+  		<result property="empId" column="emp_id" />
+  		<result property="proAtndYn" column="pro_atnd_yn" />
+  	</resultMap>
+  	
+  	
+  	<!-- 프로젝트 진행 / 완료 상태 변경 -->
+  	<update id="updateProjectStts" parameterType="kr.or.ddit.comm.project.vo.ProjectVO">
+  		UPDATE project
+		SET pro_stts_cd = 'PRO003'
+		<![CDATA[
+	    	WHERE pro_end_dt < CURRENT_DATE
+	    ]]>
+		    AND pro_stts_cd != 'PRO003'
+		    AND pro_del_yn in ('N', 'n')
+  	</update>
+  
+  
+  	<!-- 프로젝트 메인 홈 카드 리스트 출력 -->
+  	<select id="selectProCardList" parameterType="String" resultType="kr.or.ddit.comm.project.vo.ProjectVO">
+		SELECT
+		    p.pro_no, 
+		    p.pro_nm, 
+		    p.pro_cn,
+		    p.emp_id, 
+		    emp.emp_nm, 
+		    emp.img_file_url,
+		    p.pro_stts_cd, 
+		    TO_CHAR(p.pro_start_dt, 'YYYY-MM-DD HH24:MI') AS pro_start_dt,
+		    TO_CHAR(p.pro_end_dt, 'YYYY-MM-DD HH24:MI') AS pro_end_dt,
+		    LISTAGG(participant_emp.emp_nm, ', ') WITHIN GROUP (ORDER BY pp.participant_no) AS participant_emp_names,
+		    LISTAGG(participant_emp.img_file_url, ', ') WITHIN GROUP (ORDER BY pp.participant_no) AS participant_img_file_urls
+		FROM 
+		    project p
+		LEFT JOIN 
+		    employee emp ON p.emp_id = emp.emp_id
+		LEFT JOIN 
+		    project_participant pp ON p.pro_no = pp.pro_no
+		LEFT JOIN 
+		    employee participant_emp ON pp.emp_id = participant_emp.emp_id
+		WHERE 
+		    (p.emp_id = #{empId} OR EXISTS (
+		        SELECT 1 
+		        FROM project_participant pp_sub 
+		        WHERE pp_sub.pro_no = p.pro_no 
+		        AND pp_sub.emp_id = #{empId}
+		    ))
+		    AND p.pro_del_yn IN ('N', 'n')
+		GROUP BY 
+		    p.pro_no, p.pro_nm, p.pro_cn, p.emp_id, emp.emp_nm, emp.img_file_url, p.pro_stts_cd, p.pro_start_dt, p.pro_end_dt
+		ORDER BY pro_no desc
+  	</select>
+
+  	<!-- 칸반보드 리스트 -->
+  	<select id="selectCanbanList" parameterType="int" resultMap="projectMap">
+		SELECT
+		    p.pro_no, p.pro_nm, p.pro_cn, p.emp_id, 
+		    emp.emp_nm, emp.img_file_url,
+		    p.pro_stts_cd,
+		    TO_CHAR(p.pro_bgng_dt, 'YYYY-MM-DD HH24:MI') AS pro_bgng_dt,
+		    TO_CHAR(p.pro_start_dt, 'YYYY-MM-DD HH24:MI') AS pro_start_dt,
+		    TO_CHAR(p.pro_end_dt, 'YYYY-MM-DD HH24:MI') AS pro_end_dt,
+		    LISTAGG(participant_emp.emp_nm, ', ') WITHIN GROUP (ORDER BY pp.participant_no) AS participant_emp_names,
+		    LISTAGG(participant_emp.img_file_url, ', ') WITHIN GROUP (ORDER BY pp.participant_no) AS participant_img_file_urls
+		FROM project p
+		    LEFT JOIN
+		        employee emp ON p.emp_id = emp.emp_id
+		    LEFT JOIN
+		        project_participant pp ON p.pro_no = pp.pro_no
+		    LEFT JOIN
+		        employee participant_emp ON pp.emp_id = participant_emp.emp_id
+		WHERE
+		    p.pro_no = #{proNo}
+		GROUP BY
+		    p.pro_no, p.pro_nm, p.pro_cn, p.emp_id, emp.emp_nm, emp.img_file_url, p.pro_stts_cd, p.pro_bgng_dt, p.pro_start_dt, p.pro_end_dt
+  	</select>
+  	
+  	<!-- 프로젝트 추가 -->
+  	<insert id="insertProForm" parameterType="kr.or.ddit.comm.project.vo.ProjectVO">
+  		<selectKey keyProperty="proNo" resultType="int" order="BEFORE">
+  			select seq_project.nextval from dual
+  		</selectKey>
+  		insert into project (
+		    pro_no, co_cd, emp_id, pro_stts_cd, pro_nm, pro_cn, pro_bgng_dt, pro_mdfcn_dt, pro_start_dt, pro_end_dt, pro_pregrt, pro_del_yn
+		) values (
+		    #{proNo}, #{coCd}, #{empId}, 'PRO001', #{proNm}, #{proCn}, sysdate, sysdate,  
+		    to_date(#{proStartDt}, 'YYYY-MM-DD"T"HH24:MI'), to_date(#{proEndDt}, 'YYYY-MM-DD"T"HH24:MI') , 0, 'N'
+		)
+  	</insert>
+	  	
+	<!-- 프로젝트 참가자 등록 -->
+	<insert id="projectParticipantInsert" parameterType="kr.or.ddit.comm.project.vo.ProjectParticipantVO">
+	    insert into project_participant (
+		    participant_no, pro_no, emp_id, pro_atnd_yn
+		) values (
+		    seq_project_participant.nextval, #{proNo}, #{empId}, 'Y'
+		)
+	</insert>
+	
+	<!-- 프로젝트 수정폼 -->
+	<select id="selectProject" parameterType="int" resultMap="projectMap">
+		select
+		    p.pro_no, p.pro_nm, p.pro_cn, p.emp_id, p.pro_stts_cd, 
+		    p.pro_bgng_dt, p.pro_end_dt, p.pro_pregrt, p.pro_start_dt,
+		    pp.emp_id as participant_emp_id, pp.pro_atnd_yn
+		from project p left outer join project_participant pp on (p.pro_no = pp.pro_no)
+		where p.pro_no = #{proNo} and p.pro_del_yn in ('N', 'n')
+	</select>
+	
+	<!-- 프로젝트 수정 -->
+	<update id="updateProject" parameterType="kr.or.ddit.comm.project.vo.ProjectVO">
+		update project
+		set
+		    pro_nm = #{proNm},
+		    pro_cn = #{proCn},
+		    pro_mdfcn_dt = sysdate,
+		    pro_start_dt = to_date(#{proStartDt}, 'YYYY-MM-DD"T"HH24:MI'),
+		    pro_end_dt =  to_date(#{proEndDt}, 'YYYY-MM-DD"T"HH24:MI')
+<!-- 		    pro_stts_cd = #{proSttsCd} -->
+		where pro_no = #{proNo}
+	</update>
+	
+	<!-- 프로젝트 참가자 정보 -->
+	<select id="selectProjectParticipant" parameterType="int" resultType="kr.or.ddit.comm.project.vo.ProjectParticipantVO">
+		select 
+		    pro_no ,emp_id ,pro_atnd_yn
+		from project_participant
+		where pro_no = #{proNo}
+	</select>
+
+	<!-- 참가자 삭제 -->
+	<update id="deleteProjectParticipant" parameterType="int">
+		update project_participant
+		set
+		    pro_atnd_yn = 'N'
+		where pro_no = #{proNo}
+	</update>
+	
+	<update id="deleteProjectParticipantByProNo" parameterType="kr.or.ddit.comm.project.vo.ProjectVO">
+		update project_participant
+		set
+		    pro_atnd_yn = 'N'
+		where pro_no = #{proNo}
+	</update>
+	
+	<update id="deleteProject" parameterType="kr.or.ddit.comm.project.vo.ProjectVO">
+		update project
+		set
+		    pro_del_yn = 'Y'
+		where pro_no = #{proNo}
+	</update>
+	
+	
+	<!-- 날짜 유효성 검사 -->
+	<select id="getProjectByNo" parameterType="int" resultType="kr.or.ddit.comm.project.vo.ProjectVO">
+		SELECT
+		    pro_no, pro_nm, pro_start_dt, pro_end_dt
+		FROM
+		    project
+		WHERE pro_no = #{proNo}
+	</select>
+		
+	<!-- 참여자 리스트 출력 -->
+	<select id="getParticipantList" parameterType="int" resultType="kr.or.ddit.comm.security.vo.EmployeeVO">
+	    SELECT 
+	        e.emp_id AS empId,
+	        e.emp_nm AS empNm,
+	        e.dept_cd AS deptCd,
+	        e.jbgd_cd AS jbgdCd
+	    FROM 
+	        project_participant pp
+	    JOIN 
+	        employee e ON pp.emp_id = e.emp_id
+	    WHERE 
+	        pp.pro_no = #{proNo}
+	</select>
+	
+	<!-- 기업 프로젝트 리스트 출력 -->
+  	<select id="selectComProCardList" parameterType="String" resultType="kr.or.ddit.comm.project.vo.ProjectVO">
+		SELECT
+		    p.pro_no, 
+		    p.pro_nm, 
+		    p.pro_cn,
+		    p.emp_id, 
+		    emp.emp_nm, 
+		    emp.img_file_url,
+		    p.pro_stts_cd, 
+		    TO_CHAR(p.pro_start_dt, 'YYYY-MM-DD HH24:MI') AS pro_start_dt,
+		    TO_CHAR(p.pro_end_dt, 'YYYY-MM-DD HH24:MI') AS pro_end_dt,
+		    LISTAGG(participant_emp.emp_nm, ', ') WITHIN GROUP (ORDER BY pp.participant_no) AS participant_emp_names,
+		    LISTAGG(participant_emp.img_file_url, ', ') WITHIN GROUP (ORDER BY pp.participant_no) AS participant_img_file_urls
+		FROM 
+		    project p
+		LEFT JOIN 
+		    employee emp ON p.emp_id = emp.emp_id
+		LEFT JOIN 
+		    project_participant pp ON p.pro_no = pp.pro_no
+		LEFT JOIN 
+		    employee participant_emp ON pp.emp_id = participant_emp.emp_id
+		WHERE 
+		    p.co_cd= #{coCd}
+		    AND p.pro_del_yn IN ('N', 'n')
+		GROUP BY 
+		    p.pro_no, p.pro_nm, p.pro_cn, p.emp_id, emp.emp_nm, emp.img_file_url, p.pro_stts_cd, p.pro_start_dt, p.pro_end_dt
+		ORDER BY pro_no desc
+  	</select>
+	
+  </mapper>

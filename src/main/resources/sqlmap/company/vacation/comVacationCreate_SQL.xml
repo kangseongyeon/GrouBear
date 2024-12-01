@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+  PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+  "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+  
+  <mapper namespace="kr.or.ddit.company.vacation.mapper.IComVacationCreateMapper">
+	
+	<insert id="addVctAtEmpId" parameterType="kr.or.ddit.company.vacation.vo.VacationCreateVO">
+		<selectKey keyProperty="vctCrtDetailCd" resultType="string" order="BEFORE">
+			SELECT ('VCDC'||SEQ_VCT_CRT_SEQ.nextval) from dual
+		</selectKey>
+		INSERT INTO VACATION_CREATE_DETAIL 
+			(VCT_CRT_DETAIL_CD, EMP_ID, VCT_CRT_CNT, VCT_CRT_YMD) 
+		VALUES
+			(#{vctCrtDetailCd } , #{empId}, #{vctCrtCnt } , SYSDATE)
+
+	</insert>  
+  
+  </mapper>

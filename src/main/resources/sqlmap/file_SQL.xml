@@ -1,0 +1,45 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+  PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+  "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+  
+  <mapper namespace="kr.or.ddit.comm.file.mapper.IFileMapper">
+  
+  <insert id="register" parameterType="AtchFileVO">
+  	insert into atch_file(
+	atch_file_cd, atch_file_del_yn, atch_file_reg_dt, atch_file_url
+	)values(
+	seq_atch_file_cd.nextval, 'N', SYSDATE, #{atchFileUrl}
+	)
+  </insert>
+  
+  <select id="setatchCd" resultType="string">
+  	select (seq_atch_file_cd.nextval) from dual
+  </select>
+  
+  <insert id="insertAtchFile" parameterType="AtchFileVO">
+  	insert into atch_file(
+		atch_file_cd, atch_file_del_yn, atch_file_reg_dt, Emp_id
+	)values(
+		#{atchFileCd}, 'N', SYSDATE, #{empId}
+	)
+ 	</insert>
+  
+  	<insert id="insertAtchFileDetail" parameterType="AtchFileDetailVO">
+  		INSERT INTO ATCH_FILE_DETAIL (
+  			ATCH_FILE_DETAIL_CD, 
+  			ATCH_FILE_CD, 
+  			ATCH_FILE_DETAIL_PATH_NM, 
+  			ATCH_FILE_DETAIL_EXTN_NM, 
+  			ATCH_FILE_DETAIL_SIZE, 
+  			ATCH_FILE_DETAIL_FANCYSIZE, 
+  			ATCH_FILE_DETAIL_ORGNL_NM, 
+  			ATCH_FILE_DETAIL_STRG_NM, 
+  			ATCH_FILE_DETAIL_REG_DT, 
+  			EMP_ID, 
+  			ATCH_FILE_DETAIL_DEL_YN
+  		) VALUES(
+  			SEQ_ATCH_FILE_DETAIL_CD.nextval , #{atchFileCd}, #{atchFileDetailPathNm}, #{atchFileDetailExtnNm}, #{atchFileDetailSize}, #{atchFileDetailFancysize}, #{atchFileDetailOrgnlNm}, #{atchFileDetailStrgNm}, SYSDATE	, #{empId}, 'N' )
+  	
+  	</insert>
+  </mapper>

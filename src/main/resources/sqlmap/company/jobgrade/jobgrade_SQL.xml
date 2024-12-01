@@ -1,0 +1,67 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+  PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+  "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="kr.or.ddit.company.jobgrade.mapper.IJobgradeMapper">
+
+	<select id="selectJbgd" resultType="kr.or.ddit.company.personnelInformation.vo.JobGradeVO">
+		SELECT
+		    JBGD_CD,
+		    CO_CD,
+		    JBGD_NM,
+		    JBGD_CRT_DT,
+		    JBGD_AUTH_PRORD
+		FROM
+		    JOBGRADE
+		WHERE 
+			CO_CD = #{coCd}
+		ORDER BY JBGD_AUTH_PRORD ASC
+	</select>
+	
+	<insert id="jbgdInsert" parameterType="kr.or.ddit.company.personnelInformation.vo.JobGradeVO">
+		<selectKey keyProperty="jbgdCd" resultType="string" order="BEFORE">
+	        SELECT CONCAT(#{coCd}, SEQ_JBGD_CD.NEXTVAL) FROM DUAL
+	    </selectKey>
+		INSERT INTO JOBGRADE (
+			JBGD_CD,
+		    CO_CD,
+		    JBGD_NM,
+		    JBGD_CRT_DT,
+		    JBGD_AUTH_PRORD
+		) VALUES (
+			#{jbgdCd},
+			#{coCd},
+			#{jbgdNm},
+			SYSDATE,
+			#{jbgdAuthPrord}
+		)
+	</insert>
+	
+	<delete id="deleteJbgd" parameterType="kr.or.ddit.company.personnelInformation.vo.JobGradeVO">
+		DELETE FROM 
+			JOBGRADE
+		WHERE JBGD_CD = #{jbgdCd}
+	</delete>
+	
+	<select id="getJbgdVO" resultType="kr.or.ddit.company.personnelInformation.vo.JobGradeVO">
+		SELECT
+			JBGD_CD,
+		    CO_CD,
+		    JBGD_NM,
+		    JBGD_CRT_DT,
+		    JBGD_AUTH_PRORD
+		FROM
+		    JOBGRADE
+		WHERE JBGD_CD = #{jbgdCd}
+	</select>
+
+	<update id="jbgdModify" parameterType="kr.or.ddit.company.personnelInformation.vo.JobGradeVO">
+		UPDATE JOBGRADE
+  		SET
+  			JBGD_NM = #{jbgdNm},
+	  		JBGD_AUTH_PRORD = #{jbgdAuthPrord}
+  		WHERE JBGD_CD = #{jbgdCd}
+	</update>
+
+</mapper>

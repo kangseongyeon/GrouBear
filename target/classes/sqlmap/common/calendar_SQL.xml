@@ -1,0 +1,91 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+  PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+  "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+  
+  <mapper namespace="kr.or.ddit.comm.calendar.mapper.ICalendarMapper">
+  
+  	<!-- 캘린더 일정 리스트 -->
+  	<select id="calendarList" parameterType="string" resultType="kr.or.ddit.comm.calendar.vo.CalendarVO">
+  		SELECT
+		    calendar_no ,emp_id ,calendar_nm ,calendar_daddr
+		   ,calendar_cn ,calendar_allday_yn
+		   , TO_CHAR(calendar_dt, 'YYYY-MM-DD') AS calendar_dt
+		   , TO_CHAR(calendar_end_dt, 'YYYY-MM-DD') AS calendar_end_dt
+		   , TO_CHAR(calendar_start_time, 'HH24:MI') AS calendar_start_time
+		   , TO_CHAR(calendar_end_time, 'HH24:MI') AS calendar_end_time 
+		FROM
+		    calendar
+		WHERE emp_id = #{empId}
+			AND calendar_del_yn in ('N', 'n')
+  	</select>
+  
+  	<!-- 캘린더 일정 추가 -->
+  	<insert id="calendarInsert">
+	    <selectKey keyProperty="calendarNo" resultType="int" order="BEFORE">
+	        SELECT seq_calendar.nextval FROM dual
+	    </selectKey>
+		    INSERT INTO calendar (
+		        calendar_no, emp_id, calendar_nm, calendar_btgng_dt,
+		        calendar_daddr, calendar_cn, calendar_dt, calendar_mdfcn_dt, calendar_end_dt,
+		        calendar_del_yn, 
+		        calendar_start_time, calendar_end_time
+		    ) VALUES (
+		        #{calendarNo}, #{empId}, #{calendarNm}, SYSDATE,
+		        #{calendarDaddr}, #{calendarCn}, 
+		        TO_DATE(#{calendarDt}, 'YYYY-MM-DD'),
+		        SYSDATE, 
+		        TO_DATE(#{calendarEndDt}, 'YYYY-MM-DD'),
+		        'N', 
+		        TO_DATE(#{calendarStartTime}, 'HH24:MI:SS'),
+		        TO_DATE(#{calendarEndTime}, 'HH24:MI:SS') 
+		    )
+	</insert>
+  	
+  	<!-- 캘린더 일정 수정폼 -->
+  	<select id="selectCalendar" parameterType="int" resultType="kr.or.ddit.comm.calendar.vo.CalendarVO">
+  		SELECT
+		    calendar_no ,calendar_se_no ,emp_id ,calendar_nm
+		   ,calendar_btgng_dt ,calendar_daddr ,calendar_cn
+		   ,calendar_dt ,calendar_mdfcn_dt ,calendar_end_dt ,calendar_alarm_setting
+		   ,calendar_del_yn ,calendar_colr_nm ,calendar_allday_yn
+		   , TO_CHAR(calendar_start_time, 'HH24:MI') AS calendar_start_time
+		   , TO_CHAR(calendar_end_time, 'HH24:MI') AS calendar_end_time 
+		FROM
+		    calendar
+		WHERE calendar_no = #{calendarNo}
+  	</select>
+  	
+  	<!-- 캘린더 일정 수정 -->
+  	<update id="calendarUpdate" parameterType="kr.or.ddit.comm.calendar.vo.CalendarVO">
+  		UPDATE calendar
+		    SET
+		        calendar_nm = #{calendarNm},
+		        calendar_daddr = #{calendarDaddr},
+		        calendar_cn = #{calendarCn},
+		        calendar_dt = TO_DATE(#{calendarDt}, 'YYYY-MM-DD'),
+	        	calendar_end_dt = TO_DATE(#{calendarEndDt}, 'YYYY-MM-DD'),
+	        	calendar_start_time = TO_DATE(#{calendarStartTime}, 'HH24:MI:SS'),
+	       		calendar_end_time = TO_DATE(#{calendarEndTime}, 'HH24:MI:SS')
+		WHERE
+		    calendar_no = #{calendarNo}
+  	</update>
+  	
+  	<!-- 캘린더 일정 삭제 -->
+  	<update id="calendarDelete" parameterType="kr.or.ddit.comm.calendar.vo.CalendarVO">
+  		UPDATE calendar
+		    SET
+		        calendar_del_yn = 'Y'
+		WHERE
+		    calendar_no = #{calendarNo}
+  	</update>
+  	
+  	<!-- 일정 드래그 시 날짜 업데이트 -->
+  	<update id="updateCalendarDate" parameterType="kr.or.ddit.comm.calendar.vo.CalendarVO">
+    	UPDATE calendar
+	    SET calendar_dt = TO_DATE(#{calendarDt}, 'YYYY-MM-DD'),
+	        calendar_end_dt = TO_DATE(#{calendarEndDt}, 'YYYY-MM-DD')
+	    WHERE calendar_no = #{calendarNo}
+  	</update>
+  </mapper>
+  

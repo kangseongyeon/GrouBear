@@ -1,0 +1,329 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+  PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+  "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="kr.or.ddit.company.community.mapper.IComCommunityMapper">
+	<resultMap type="kr.or.ddit.company.community.vo.ComCommunityVO" id="ComCommunityMap">
+		<id property="cmntyNo" column="cmnty_no" />
+		<result property="cmntyNo" column="cmnty_no" />
+		<result property="empId" column="emp_id" />
+		<result property="empNm" column="emp_nm" />
+		<result property="coCd" column="co_cd" />
+		<result property="atchFileCd" column="atch_file_cd" />
+		<result property="cmntyType" column="cmnty_type" />
+		<result property="cmntyTtl" column="cmnty_ttl" />
+		<result property="cmntyRegDt" column="cmnty_reg_dt" />
+		<result property="cmntyMdfcnDt" column="cmnty_mdfcn_dt" />
+		<result property="cmntyCn" column="cmnty_cn" />
+		<result property="cmntyDelYn" column="cmnty_del_yn" />
+		<result property="cmntyInqCnt" column="cmnty_inq_cnt" />
+		<result property="cmntyNoticeYn" column="cmnty_notice_yn" />
+		<result property="cmntyQstnKndNm" column="cmnty_qstn_knd_nm" />
+		<result property="cmntyQstnSttsYn" column="cmnty_qstn_stts_yn" />
+		<collection property="atchFiles" resultMap="AtchFileMap"></collection>
+	</resultMap>
+	
+	<resultMap type="kr.or.ddit.company.comment.vo.ComCommentVO" id="ComCommentMap">
+		<result property="commentNo" column="comment_no" />
+		<result property="cmntyNo" column="cmnty_no" />
+		<result property="empId" column="emp_id" />
+		<result property="cmntCn" column="cmnt_cn" />
+		<result property="cmntRegDt" column="cmnt_reg_dt" />
+		<result property="upCmntNo" column="up_cmnt_no" />
+	</resultMap>
+	
+	<resultMap type="kr.or.ddit.comm.file.vo.AtchFileVO" id="AtchFileMap">
+		<id property="atchFileCd" column="atch_file_cd" />
+		<result property="atchFileCd" column="atch_file_cd" />
+		<result property="empId" column="emp_id" />
+		<result property="atchFileDelYn" column="atch_file_del_yn" />
+		<result property="atchFileRegDt" column="atch_file_reg_dt" />
+		<collection property="atchFileDetailList" resultMap="AtchFileDetailMap"></collection>
+	</resultMap>
+	
+	<resultMap type="kr.or.ddit.comm.file.vo.AtchFileDetailVO" id="AtchFileDetailMap">
+		<id property="atchFileDetailCd" column="atch_file_detail_cd" />
+		<result property="atchFileDetailCd" column="atch_file_detail_cd" />
+		<result property="atchFileCd" column="atch_file_cd" />
+		<result property="atchFileDetailPathNm" column="atch_file_detail_path_nm" />
+		<result property="atchFileDetailExtnNm" column="atch_file_detail_extn_nm" />
+		<result property="atchFileDetailSize" column="atch_file_detail_size" />
+		<result property="atchFileDetailFancysize" column="atch_file_detail_fancysize" />
+		<result property="atchFileDetailOrgnlNm" column="atch_file_detail_orgnl_nm" />
+		<result property="atchFileDetailStrgNm" column="atch_file_detail_strg_nm" />
+		<result property="atchFileDetailRegDt" column="atch_file_detail_reg_dt" />
+		<result property="empId" column="emp_id" />
+	</resultMap>
+
+	<select id="communityFree" resultType="kr.or.ddit.company.community.vo.ComCommunityVO"
+		parameterType="string">
+		select
+			cmnty_no,
+			cmnty_notice_yn,
+			cmnty_del_yn,
+			cmnty_ttl,
+			emp_nm,
+			TO_CHAR(TRUNC(cmnty_reg_dt), 'YYYY-MM-DD') AS cmnty_reg_dt,
+			cmnty_inq_cnt,
+			atch_file_cd
+		from community
+		where co_cd = #{coCd}
+		and cmnty_type = 'free'
+		and cmnty_del_yn = 'N'
+		order by cmnty_reg_dt desc
+	</select>
+
+	<select id="communityInfo" resultType="kr.or.ddit.company.community.vo.ComCommunityVO"
+		parameterType="string">
+		select
+			cmnty_no,
+			cmnty_notice_yn,
+			cmnty_del_yn,
+			cmnty_ttl,
+			emp_nm,
+			TO_CHAR(TRUNC(cmnty_reg_dt), 'YYYY-MM-DD') AS cmnty_reg_dt,
+			cmnty_inq_cnt,
+			atch_file_cd
+		from community
+		where co_cd = #{coCd}
+		and cmnty_type = 'info'
+		and cmnty_del_yn = 'N'
+		order by cmnty_reg_dt desc
+	</select>
+
+	<select id="communityCompany" resultType="kr.or.ddit.company.community.vo.ComCommunityVO"
+		parameterType="string">
+		select
+			cmnty_no,
+			cmnty_notice_yn,
+			cmnty_del_yn,
+			cmnty_ttl,
+			emp_nm,
+			TO_CHAR(TRUNC(cmnty_reg_dt), 'YYYY-MM-DD') AS cmnty_reg_dt,
+			cmnty_inq_cnt,
+			atch_file_cd
+		from community
+		where co_cd = #{coCd}
+		and cmnty_type = 'company'
+		and cmnty_del_yn = 'N'
+		order by cmnty_reg_dt desc
+	</select>
+ 
+ 	<insert id="atchFileinsert" parameterType="kr.or.ddit.comm.file.vo.AtchFileVO" useGeneratedKeys="true">
+ 		<selectKey keyProperty="atchFileCd" order="BEFORE" resultType="string">
+ 			select to_char(seq_atch_file_cd.nextval) from dual
+ 		</selectKey>
+ 		insert into atch_file (
+ 			atch_file_cd,
+			emp_id
+ 		) values (
+ 			#{atchFileCd},
+			#{empId}
+ 		)
+ 	</insert>
+ 	
+ 	<insert id="atchFileDetailInsert" parameterType="kr.or.ddit.comm.file.vo.AtchFileDetailVO">
+ 		insert into atch_file_detail (
+ 			atch_file_detail_cd,
+			atch_file_cd,
+			atch_file_detail_path_nm,
+			atch_file_detail_extn_nm,
+			atch_file_detail_size,
+			atch_file_detail_fancysize,
+			atch_file_detail_orgnl_nm,
+			atch_file_detail_strg_nm,
+			emp_id
+ 		) values (
+ 			seq_atch_file_detail_cd.nextval,
+			#{atchFileCd},
+			#{atchFileDetailPathNm},
+			#{atchFileDetailExtnNm},
+			#{atchFileDetailSize},
+			#{atchFileDetailFancysize},
+			#{atchFileDetailOrgnlNm},
+			#{atchFileDetailStrgNm},
+			#{empId}
+ 		) 
+ 	</insert>
+ 	
+ 	<insert id="addAtchFile" parameterType="kr.or.ddit.comm.file.vo.AtchFileDetailVO">
+ 		insert into atch_file_detail (
+ 			atch_file_detail_cd,
+			atch_file_cd,
+			atch_file_detail_path_nm,
+			atch_file_detail_extn_nm,
+			atch_file_detail_size,
+			atch_file_detail_fancysize,
+			atch_file_detail_orgnl_nm,
+			atch_file_detail_strg_nm,
+			emp_id
+ 		) values (
+ 			seq_atch_file_detail_cd.nextval,
+			#{atchFileCd},
+			#{atchFileDetailPathNm},
+			#{atchFileDetailExtnNm},
+			#{atchFileDetailSize},
+			#{atchFileDetailFancysize},
+			#{atchFileDetailOrgnlNm},
+			#{atchFileDetailStrgNm},
+			#{empId}
+ 		) 
+ 	
+ 	</insert>
+ 	
+	<insert id="insertCommunity" parameterType="kr.or.ddit.company.community.vo.ComCommunityVO">
+	    insert into community (
+	        cmnty_no,
+	        atch_file_cd,
+	        cmnty_type,
+	        cmnty_ttl,
+	        cmnty_cn,
+	        cmnty_notice_yn,
+	        emp_id,
+	        emp_nm,
+	        co_cd
+	    ) values (
+	        seq_community.nextval,
+	        #{atchFileCd},
+	        #{cmntyType},
+	        #{cmntyTtl},
+	        #{cmntyCn},
+	        #{cmntyNoticeYn},
+	        #{empId},
+	        #{empNm},
+	        #{coCd}
+	    )
+	</insert>
+	
+	<select id="communityDetail" parameterType="int" resultMap="ComCommunityMap">
+		SELECT 
+		    c.cmnty_no,
+		    a.atch_file_cd,
+		    c.cmnty_type,
+		    c.cmnty_ttl,
+		    c.cmnty_cn,
+		    c.emp_nm,
+		    c.cmnty_reg_dt,
+		    c.cmnty_inq_cnt,
+		    d.atch_file_detail_cd,
+		    d.atch_file_detail_path_nm,
+		    d.atch_file_detail_extn_nm,
+		    d.atch_file_detail_size,
+		    d.atch_file_detail_fancysize,
+		    d.atch_file_detail_orgnl_nm,
+		    d.atch_file_detail_strg_nm,
+		    d.atch_file_detail_reg_dt,
+		    d.atch_file_detail_del_Yn,
+		    d.emp_id
+		FROM 
+		    community c
+		LEFT JOIN 
+		    atch_file a ON c.atch_file_cd = a.atch_file_cd
+		LEFT JOIN 
+		    atch_file_detail d ON a.atch_file_cd = d.atch_file_cd AND d.atch_file_detail_del_Yn = 'N'
+		WHERE 
+		    c.cmnty_no = #{cmntyNo}
+	</select>
+
+	<update id="incrementHit">
+		update community
+		set
+			cmnty_inq_cnt = cmnty_inq_cnt + 1
+		where cmnty_no = #{cmntyNo}
+	</update>
+
+	<update id="deleteYAtchFile" parameterType="string">
+		UPDATE atch_file_detail
+		SET
+		atch_file_detail_del_yn = 'Y'
+		WHERE atch_file_cd = #{atchFileCd}
+	</update>
+	
+	<update id="deleteNAtchFile" parameterType="string">
+		UPDATE atch_file_detail
+		SET
+		atch_file_detail_del_yn = 'N'
+		WHERE atch_file_detail_cd = #{atchFileCd}
+	</update>
+	
+	<update id="communityModify" parameterType="kr.or.ddit.company.community.vo.ComCommunityVO">
+		UPDATE community
+  		SET
+        cmnty_ttl = #{cmntyTtl},
+        cmnty_cn = #{cmntyCn},
+        atch_file_cd = #{atchFileCd}
+    	WHERE cmnty_no = #{cmntyNo}
+	</update>
+
+	<update id="removeCommunity" parameterType="int">
+		update community
+		set
+			cmnty_del_yn = 'Y'
+		where cmnty_no = #{cmntyNo}
+	</update>
+	
+	<select id="selectCmntyCount" parameterType="kr.or.ddit.comm.paging.vo.PaginationInfoVO" resultType="int">
+		select count(cmnty_no)
+		from community
+		where cmnty_type = #{cmntyType}
+		and cmnty_del_yn = 'N'
+		<include refid="cmntySearch"/>
+	</select>
+	
+	<select id="selectCmntyList" parameterType="kr.or.ddit.comm.paging.vo.PaginationInfoVO" resultType="kr.or.ddit.employee.community.vo.CommunityVO">
+		select
+			b.*
+		from (
+			select 
+				a.*, row_number() over (order by a.cmnty_no desc) rnum 
+			from (
+				select
+					cmnty_no,
+					cmnty_notice_yn,
+					cmnty_del_yn,
+					cmnty_ttl,
+					emp_id,
+					emp_nm,
+					TO_CHAR(TRUNC(cmnty_reg_dt), 'YYYY-MM-DD') AS cmnty_reg_dt,
+					cmnty_inq_cnt,
+			atch_file_cd
+				from community
+				where cmnty_type = #{cmntyType}
+				and cmnty_del_yn = 'N'
+				<include refid="cmntySearch"/>
+				order by cmnty_reg_dt desc
+			) a
+		) b
+		<![CDATA[
+			where b.rnum >= #{startRow} and b.rnum <= #{endRow}
+		]]>
+	</select>
+	
+	<sql id="cmntySearch">
+      <if test="searchWord != null">
+         and (
+         		emp_nm like '%' || #{searchWord} || '%' or
+         		cmnty_type like '%' || #{searchWord} || '%' or
+         		cmnty_ttl like '%' || #{searchWord} || '%' or
+         		cmnty_cn like '%' || #{searchWord} || '%' or
+         		cmnty_no like '%' || #{searchWord} || '%' or
+         		cmnty_inq_cnt like '%' || #{searchWord} || '%' or
+         		cmnty_notice_yn like '%' || #{searchWord} || '%' or
+         		cmnty_reg_dt like '%' || #{searchWord} || '%'
+         	)
+      </if>
+   </sql>
+    
+   <select id="downloadFile" parameterType="string" resultType="kr.or.ddit.comm.file.vo.AtchFileDetailVO">
+   		select
+	   		atch_file_detail_cd,
+			atch_file_detail_path_nm,
+			atch_file_detail_size,
+			atch_file_detail_orgnl_nm,
+			atch_file_detail_strg_nm
+		from atch_file_detail
+		where atch_file_detail_cd = #{atchFileDetailCd}
+   </select>
+
+</mapper>

@@ -1,0 +1,47 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+  PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+  "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+  
+  <mapper namespace="kr.or.ddit.comm.payment.mapper.IPaymentMapper">
+  
+     	<insert id="insertCompany" parameterType="CompanyVO" useGeneratedKeys="true">
+     		<selectKey keyProperty="coCd" resultType="string" order="BEFORE">
+     		select ('cp'||seq_co_cd.nextval) from dual
+     		</selectKey>
+     		INSERT INTO COMPANY
+				(CO_CD, CEO_ID, CO_NM, CO_BRNO, CEO_NM, CO_ZIP, CO_ADDR, CO_DADDR, CO_TEL, CO_CNT)
+			VALUES
+				(#{coCd},#{ceoId}, #{coNm}, #{coBrno}, #{ceoNm}, #{coZip}, #{coAddr}, #{coDaddr}, #{coTel}, #{coCnt})
+     	</insert>
+     
+     	<insert id="insertRgSt" parameterType="RegularSettlementVO" useGeneratedKeys="true">
+     		<selectKey keyProperty="rglStlmNo" resultType="string" order="BEFORE">
+     			select (SEQ_RGLSTLM_NO.nextval) from dual
+     		</selectKey>
+     		INSERT INTO REGULAR_SETTLEMENT
+				(RGL_STLM_NO, GDS_NM, EMP_ID, RGL_STLM_DT, RGL_STLM_BGNG_YMD, RGL_STLM_END_YMD, RGL_STLM_STPL_PRD, RGL_STLM_NOPE, RGL_STLM_PRC)
+			VALUES
+				(#{rglStlmNo}, #{gdsNm}, #{empId}, #{rglStlmDt}, SYSDATE, ADD_MONTHS(SYSDATE,#{rglStlmStplPrd}), #{rglStlmStplPrd}, #{rglStlmNope}, #{rglStlmPrc})
+     	</insert>
+     	
+     	<insert id="insertStm" parameterType="SettlementVO" useGeneratedKeys="true">
+     		<selectKey keyProperty="rglStlmNo" resultType="string" order="BEFORE">
+     			select RGL_STLM_NO from REGULAR_SETTLEMENT where EMP_ID = #{empId}
+     		</selectKey>
+     		INSERT INTO SETTLEMENT
+				(STLM_NO, RGL_STLM_NO, STLM_PRC, STLM_DT, STLM_STTS)
+			VALUES
+				(seq_stlm_no.nextval, #{rglStlmNo}, #{stlmPrc}, SYSDATE, '결제완료')
+     	</insert>
+     	<select id="getComCd" parameterType="string" resultType="string">
+     		select 
+     			co_cd
+     		from
+     			employee
+     		where 
+     			emp_id = #{empId}
+     	
+     	</select>
+     	
+  </mapper>

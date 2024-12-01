@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+  PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+  "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+  
+  <mapper namespace="kr.or.ddit.groubear.contract.mapper.IContractDownloadMapper">
+  
+  <select id="createExcelContract" resultType="kr.or.ddit.groubear.contract.vo.ContractVO">
+  	select ctrt_no, co_nm, ctrt_bgng_dt, ctrt_expry_dt, ctrt_pre, ctrt_dt, ctrt_amt, ctrt_nm, ctrt_brno, premium_yn
+  	from contract
+  
+  </select>
+  </mapper>

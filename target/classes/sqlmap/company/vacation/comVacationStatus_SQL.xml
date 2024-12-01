@@ -1,0 +1,195 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+  PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+  "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+  
+  <mapper namespace="kr.or.ddit.company.vacation.mapper.IComVacationStatusMapper">
+  	<sql id="vctSttsSearch">
+      <if test="searchWord != null">
+         and (
+         		emp_nm like '%' || #{searchWord} || '%' or
+         		team_nm like '%' || #{searchWord} || '%' or
+         		emp_jncmp_ymd like '%' || #{searchWord} || '%' or
+         		dept_nm like '%' || #{searchWord} || '%' or
+         		JBGD_NM like '%' || #{searchWord} || '%'
+         	)
+      </if>
+   </sql>
+   
+  	<select id="getPagingVctSttsCount" resultType="int" parameterType="kr.or.ddit.comm.paging.vo.PaginationInfoVO">
+  		select
+			count(f.emp_id)
+		from(
+			select
+			  	e.*, row_number() over (order by e.emp_id desc) rnum
+			  from(
+		  		SELECT 
+					d.*, NVL(TEAM.TEAM_NM , 'NoData') TEAM_NM, (d.VCT_CNT -  d.VCT_USE_DAY_CNT) VCT_RMND_DAY_CNT
+				FROM
+					(SELECT 
+						b.* , nvl(c.VCT_USE_DAY_CNT , 0) VCT_USE_DAY_CNT
+					FROM 
+						(SELECT 
+							a.EMP_ID,a.EMP_NM, a.TEAM_CD, TO_CHAR(a.EMP_JNCMP_YMD,'YYYY-MM-DD') EMP_JNCMP_YMD, NVL(a.DEPT_NM, 'NoData') DEPT_NM, NVL(a.VCT_CNT, 0) VCT_CNT , NVL(JOB.JBGD_NM,'NoData') JBGD_NM
+						FROM (
+							SELECT 
+								EMPINFO.*, CRT.VCT_CNT
+							FROM
+								(SELECT 
+									emp.EMP_ID , emp.EMP_NM, emp.EMP_JNCMP_YMD , emp.JBGD_CD, emp.TEAM_CD, dept.DEPT_NM 
+								FROM
+									EMPLOYEE emp
+						 		LEFT OUTER JOIN
+									DEPARTMENT dept
+								ON emp.DEPT_CD = dept.DEPT_CD
+								WHERE
+									emp.CO_CD = #{coCd}
+								) EMPINFO 
+							LEFT OUTER JOIN 
+								(SELECT  EMP_ID ,sum(vct_crt_cnt) VCT_CNT FROM VACATION_CREATE_DETAIL GROUP BY EMP_ID) CRT
+							ON EMPINFO.EMP_ID = CRT.EMP_ID
+							) a
+						LEFT OUTER JOIN 
+							JOBGRADE JOB
+						ON a.JBGD_CD = JOB.JBGD_CD) b
+					LEFT OUTER JOIN 
+						(
+						SELECT 
+							sum(VCT_USE_DAY_CNT) VCT_USE_DAY_CNT, EMP_ID 
+						FROM
+							VACATION_APPLY 
+						WHERE
+							VCT_APR_STTS = 'APR002'
+						GROUP BY EMP_ID
+						) c
+					ON
+						b.EMP_ID = c.EMP_ID	
+					) d
+				LEFT OUTER JOIN 
+					 TEAM
+				ON
+					d.TEAM_CD = TEAM.TEAM_CD
+				WHERE 1=1
+				<include refid="vctSttsSearch"/>
+				order by emp_id desc
+				) e
+			) f
+  	</select>
+  
+  	<select id="getAllVctSttsList" resultType="kr.or.ddit.company.vacation.vo.VacationStatusVO" parameterType="string">
+		SELECT 
+			d.*, NVL(TEAM.TEAM_NM , 'NoData') TEAM_NM, (d.VCT_CNT -  d.VCT_USE_DAY_CNT) VCT_RMND_DAY_CNT
+		FROM
+			(SELECT 
+				b.* , nvl(c.VCT_USE_DAY_CNT , 0) VCT_USE_DAY_CNT
+			FROM 
+				(SELECT 
+					a.EMP_ID,a.EMP_NM, a.TEAM_CD, TO_CHAR(a.EMP_JNCMP_YMD,'YYYY-MM-DD') EMP_JNCMP_YMD, NVL(a.DEPT_NM, 'NoData') DEPT_NM, NVL(a.VCT_CNT, 0) VCT_CNT , NVL(JOB.JBGD_NM,'NoData') JBGD_NM
+				FROM (
+					SELECT 
+						EMPINFO.*, CRT.VCT_CNT
+					FROM
+						(SELECT 
+							emp.EMP_ID , emp.EMP_NM, emp.EMP_JNCMP_YMD , emp.JBGD_CD, emp.TEAM_CD, dept.DEPT_NM 
+						FROM
+							EMPLOYEE emp
+				 		LEFT OUTER JOIN
+							DEPARTMENT dept
+						ON emp.DEPT_CD = dept.DEPT_CD
+						WHERE
+							emp.CO_CD = #{coCd}
+						) EMPINFO 
+					LEFT OUTER JOIN 
+						(SELECT  EMP_ID ,sum(vct_crt_cnt) VCT_CNT FROM VACATION_CREATE_DETAIL GROUP BY EMP_ID) CRT
+					ON EMPINFO.EMP_ID = CRT.EMP_ID
+					) a
+				LEFT OUTER JOIN 
+					JOBGRADE JOB
+				ON a.JBGD_CD = JOB.JBGD_CD) b
+			LEFT OUTER JOIN 
+				(
+				SELECT 
+					sum(VCT_USE_DAY_CNT) VCT_USE_DAY_CNT, EMP_ID 
+				FROM
+					VACATION_APPLY 
+				WHERE
+					VCT_APR_STTS = 'APR002'
+				GROUP BY EMP_ID
+				) c
+			ON
+				b.EMP_ID = c.EMP_ID	
+			) d
+		LEFT OUTER JOIN 
+			 TEAM
+		ON
+			d.TEAM_CD = TEAM.TEAM_CD
+  	</select>
+  		
+  	<select id="getPagingVctSttsList" parameterType="kr.or.ddit.comm.paging.vo.PaginationInfoVO" resultType="kr.or.ddit.company.vacation.vo.VacationStatusVO">
+		select
+			f.*
+		from(
+			select
+			  	e.*, row_number() over (order by e.emp_id desc) rnum
+			  from(
+		  		SELECT 
+					d.*, NVL(TEAM.TEAM_NM , 'NoData') TEAM_NM, (d.VCT_CNT -  d.VCT_USE_DAY_CNT) VCT_RMND_DAY_CNT
+				FROM
+					(SELECT 
+						b.* , nvl(c.VCT_USE_DAY_CNT , 0) VCT_USE_DAY_CNT
+					FROM 
+						(SELECT 
+							a.EMP_ID,a.EMP_NM, a.TEAM_CD, TO_CHAR(a.EMP_JNCMP_YMD,'YYYY-MM-DD') EMP_JNCMP_YMD, NVL(a.DEPT_NM, 'NoData') DEPT_NM, NVL(a.VCT_CNT, 0) VCT_CNT , NVL(JOB.JBGD_NM,'NoData') JBGD_NM
+						FROM (
+							SELECT 
+								EMPINFO.*, CRT.VCT_CNT
+							FROM
+								(SELECT 
+									emp.EMP_ID , emp.EMP_NM, emp.EMP_JNCMP_YMD , emp.JBGD_CD, emp.TEAM_CD, dept.DEPT_NM 
+								FROM
+									EMPLOYEE emp
+						 		LEFT OUTER JOIN
+									DEPARTMENT dept
+								ON emp.DEPT_CD = dept.DEPT_CD
+								WHERE
+									emp.CO_CD = #{coCd}
+								) EMPINFO 
+							LEFT OUTER JOIN 
+								(SELECT  EMP_ID ,sum(vct_crt_cnt) VCT_CNT FROM VACATION_CREATE_DETAIL GROUP BY EMP_ID) CRT
+							ON EMPINFO.EMP_ID = CRT.EMP_ID
+							) a
+						LEFT OUTER JOIN 
+							JOBGRADE JOB
+						ON a.JBGD_CD = JOB.JBGD_CD) b
+					LEFT OUTER JOIN 
+						(
+						SELECT 
+							sum(va.VCT_USE_DAY_CNT) VCT_USE_DAY_CNT, EMP_ID 
+						FROM
+							VACATION_APPLY va, VACATION_APPLY_APPROVAL vaa
+						WHERE
+							va.VCT_APLY_CD = vaa.VCT_APLY_CD
+						AND
+							vaa.VCT_APLY_APR_STTS = 'VAA002'
+						GROUP BY EMP_ID
+						) c
+					ON
+						b.EMP_ID = c.EMP_ID	
+					) d
+				LEFT OUTER JOIN 
+					 TEAM
+				ON
+					d.TEAM_CD = TEAM.TEAM_CD
+				WHERE 1=1
+				<include refid="vctSttsSearch"/>
+				order by emp_id desc
+				) e
+			) f
+		<![CDATA[
+		  	where f.rnum >= #{startRow} and f.rnum <= #{endRow}
+	  	]]>
+		
+		
+  	</select>
+  </mapper>
+  	

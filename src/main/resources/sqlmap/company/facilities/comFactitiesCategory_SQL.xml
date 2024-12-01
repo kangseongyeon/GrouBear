@@ -1,0 +1,75 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+  PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+  "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+  
+  <mapper namespace="kr.or.ddit.company.facilities.mapper.IFacilititesCategoryMapper">
+	
+	<!-- 카테고리 리스트 가져오기 -->
+	<select id="getCategoryList" resultType="kr.or.ddit.company.facilities.vo.FacilityCategoryVO" parameterType="kr.or.ddit.comm.security.vo.EmployeeVO">
+		SELECT 
+			FCLT_CTGR_CD, CO_CD, FCLT_CTGR_NM, FCLT_CTGR_IMG_URL, FCLT_CTGR_TURN 
+		FROM 
+			FACILITY_CATEGORY
+		WHERE 
+			CO_CD = #{coCd}
+		ORDER BY FCLT_CTGR_TURN ASC
+	</select>
+	
+	<!-- 카테고리 새로 추가 -->
+	<insert id="insertCtgr" parameterType="kr.or.ddit.company.facilities.vo.FacilityCategoryVO">
+		<selectKey keyProperty="fcltCtgrTurn" resultType="string" order="BEFORE">
+			SELECT 
+				max(FCLT_CTGR_TURN) + 1   
+			FROM 
+				FACILITY_CATEGORY
+			WHERE 
+				CO_CD = #{coCd}
+		</selectKey>
+	  	INSERT INTO FACILITY_CATEGORY (
+	  		FCLT_CTGR_CD, CO_CD, FCLT_CTGR_NM, FCLT_CTGR_IMG_URL, FCLT_CTGR_TURN
+	  	) VALUES(
+	  		('FCLTCTGR' || SEQ_FCLT_CTGR_CD.nextval) , #{coCd}, #{fcltCtgrNm}, #{fcltCtgrImgUrl} , #{fcltCtgrTurn}
+	  	)
+  	</insert>
+  
+  	<update id="changeCateTurn" parameterType="kr.or.ddit.company.facilities.vo.FacilityCategoryVO">
+  		UPDATE 
+  			FACILITY_CATEGORY 
+  		SET 
+  			FCLT_CTGR_TURN= #{fcltCtgrTurn}
+  		WHERE 
+  			FCLT_CTGR_CD= #{fcltCtgrCd}
+  	
+  	</update>
+  	
+  	<select id="getCtgrInfo" parameterType="kr.or.ddit.company.facilities.vo.FacilityCategoryVO" resultType="kr.or.ddit.company.facilities.vo.FacilityCategoryVO">
+  		SELECT
+  			*
+  		FROM
+  			FACILITY_CATEGORY
+  		WHERE
+  			FCLT_CTGR_CD = #{fcltCtgrCd}
+  	</select>
+  	
+  	<sql id="modifyImgUrlNullChk">
+      <if test="fcltCtgrImgUrl != null">
+        , FCLT_CTGR_IMG_URL=#{fcltCtgrImgUrl}
+      </if>
+   </sql>
+  	
+  	
+  	<update id="ctgrModify" parameterType="kr.or.ddit.company.facilities.vo.FacilityCategoryVO">
+  		UPDATE 
+  			FACILITY_CATEGORY 
+  		SET 
+  			FCLT_CTGR_NM= #{fcltCtgrNm}
+  			<include refid="modifyImgUrlNullChk"/>
+		WHERE FCLT_CTGR_CD= #{fcltCtgrCd}
+  	
+  	</update>
+  	
+  	<delete id="delCategory" parameterType="kr.or.ddit.company.facilities.vo.FacilityCategoryVO">
+  		DELETE FROM FACILITY_CATEGORY WHERE FCLT_CTGR_CD=#{fcltCtgrCd}
+  	</delete>
+  </mapper>

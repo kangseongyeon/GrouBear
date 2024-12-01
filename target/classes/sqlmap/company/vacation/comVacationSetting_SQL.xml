@@ -1,0 +1,50 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+  PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+  "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+  
+  <mapper namespace="kr.or.ddit.company.vacation.mapper.IComVacationSettingMapper">
+  
+  	<select id="getvctSettingval" resultType="kr.or.ddit.company.vacation.vo.YearVctVO" parameterType="kr.or.ddit.comm.security.vo.EmployeeVO">
+  		select 
+  			year_cnt, year_vct_cnt
+  		from
+  			year_vct
+  		where 
+  			co_cd = #{coCd}
+  	
+  	</select>
+  	
+  	<insert id="setBasicVct" parameterType="kr.or.ddit.company.vacation.vo.YearVctVO">
+  		INSERT INTO 
+  			YEAR_VCT (CO_CD, YEAR_CNT, YEAR_VCT_CNT) 
+  		 VALUES
+  		 (#{coCd}, #{yearCnt}, #{yearVctCnt})
+  	
+  	</insert>
+  
+  
+  	<!-- <update id="setYearVctCnt" parameterType="java.util.Map">
+	<foreach collection="yvList" item="item" separator=" " open="Insert All" close="select * from dual" index=",">
+	  	INTO YEAR_VCT 
+		  	(CO_CD, YEAR_CNT, YEAR_VCT_CNT) 
+		VALUES
+			(#{item.coCd}, #{item.yearCnt}, #{item.yearVctCnt} )
+ 		</foreach>
+  	</update> -->
+  	
+  	
+  	<update id="setYearVctCnt" parameterType="java.util.Map">
+		<foreach collection="yvList" item="item" index="index" separator=";" open="DECLARE BEGIN" close="; END;">
+		UPDATE 
+			YEAR_VCT 
+		SET  
+			YEAR_VCT_CNT=  #{item.yearVctCnt}
+		WHERE 
+			CO_CD = #{item.coCd} AND YEAR_CNT = #{item.yearCnt}
+ 		</foreach>
+  	</update>
+  	
+  </mapper>
+  
+  

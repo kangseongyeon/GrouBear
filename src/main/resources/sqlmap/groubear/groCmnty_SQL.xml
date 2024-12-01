@@ -1,0 +1,464 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+  PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+  "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+  
+  <mapper namespace="kr.or.ddit.groubear.cmnty.mapper.IGroCmntyMapper">
+	
+	<resultMap type="kr.or.ddit.comm.cmnty.vo.CmntyVO" id="cmntyNoticeMap">
+		<result property="cmntyNo" column="cmnty_no" />
+		<result property="empId" column="emp_id" />
+		<result property="coCd" column="co_cd" />
+		<result property="atchFileCd" column="atch_file_cd" />
+		<result property="cmntyType" column="cmnty_type" />
+		<result property="cmntyTtl" column="cmnty_ttl" />
+		<result property="cmntyRegDt" column="cmnty_reg_dt" />
+		<result property="cmntyMdfcnDt" column="cmnty_mdfcn_dt" />
+		<result property="cmntyCn" column="cmnty_cn" />
+		<result property="cmntyDelYn" column="cmnty_del_yn" />
+		<result property="cmntyInqCnt" column="cmnty_inq_cnt" />
+		<result property="cmntyNoticeYn" column="cmnty_notice_yn" />
+		<result property="comDtlCd" column="com_dtl_cd" />
+		<result property="cmntyQstnSttsYn" column="cmnty_qstn_stts_yn" />
+		<result property="cmntyPrvtPstYn" column="cmnty_prvt_pst_yn" />
+		<result property="atchFileDelYn" column="atch_file_del_yn" />
+		<result property="atchFileRegDt" column="atch_file_reg_dt" />
+		<collection property="atchFileDetailList" resultMap="AtchFileDetailMap"/>
+	</resultMap>
+	
+	<resultMap type="kr.or.ddit.comm.file.vo.AtchFileDetailVO" id="AtchFileDetailMap">
+		<result property="atchFileDetailCd" column="atch_file_detail_cd" />
+		<result property="atchFileDetailPathNm" column="atch_file_detail_path_nm" />
+		<result property="atchFileDetailExtnNm" column="atch_file_detail_extn_nm" />
+		<result property="atchFileDetailSize" column="atch_file_detail_size" />
+		<result property="atchFileDetailFancysize" column="atch_file_detail_fancysize" />
+		<result property="atchFileDetailOrgnlNm" column="atch_file_detail_orgnl_nm" />
+		<result property="atchFileDetailStrgNm" column="atch_file_detail_strg_nm" />
+		<result property="atchFileDetailRegDt" column="atch_file_detail_reg_dt" />
+		<result property="atchFileDetailDelYn" column="atch_file_detail_del_yn" />
+	</resultMap>
+
+	<!-- 리스트에서 검색어로 조회 -->
+	<sql id="cmntycSearch">
+      <if test="searchWord != null">
+         and (
+         		com_dtl_cd_nm like '%' || #{searchWord} || '%' or
+         		emp_id like '%' || #{searchWord} || '%' or
+         		cmnty_ttl like '%' || #{searchWord} || '%' or
+         		cmnty_cn like '%' || #{searchWord} || '%'
+         	)
+      </if>
+   </sql>
+
+	<!-- 그루베어 시스템 공지사항 목록 갯수 가져오기 -->
+	<select id="groNoticeSelectListCount" parameterType="kr.or.ddit.comm.paging.vo.PaginationInfoVO" resultType="int">
+		select count(*)
+		from (SELECT row_number() over (order by CMNTY_NOTICE_YN desc, cmnty_reg_dt desc) rnum,
+		                CMNTY_NO ,
+		                EMP_ID ,
+		                CO_CD ,
+		                ATCH_FILE_CD ,
+		                CMNTY_TYPE ,
+		                CMNTY_TTL ,
+		                CMNTY_REG_DT ,
+		                CMNTY_MDFCN_DT ,
+		                CMNTY_CN ,
+		                CMNTY_DEL_YN ,
+		                CMNTY_INQ_CNT,
+		                CMNTY_NOTICE_YN
+		        FROM COMMUNITY
+		        where CMNTY_TYPE = 'GroNotice' and
+		              CMNTY_DEL_YN = 'N'
+		              <include refid="cmntycSearch"/>
+		        order by CMNTY_NOTICE_YN desc, cmnty_reg_dt desc) b
+	</select>
+	
+	<!-- 그루베어 시스템 공지사항 목록 가져오기 -->
+	<select id="groNoticeSelectList" parameterType="kr.or.ddit.comm.paging.vo.PaginationInfoVO" resultType="kr.or.ddit.comm.cmnty.vo.CmntyVO">
+		select b.*
+		from (SELECT row_number() over (order by CMNTY_NOTICE_YN desc, cmnty_reg_dt desc) rnum,
+		                CMNTY_NO ,
+		                EMP_ID ,
+		                CO_CD ,
+		                ATCH_FILE_CD ,
+		                CMNTY_TYPE ,
+		                CMNTY_TTL ,
+		                CMNTY_REG_DT ,
+		                CMNTY_MDFCN_DT ,
+		                CMNTY_CN ,
+		                CMNTY_DEL_YN ,
+		                CMNTY_INQ_CNT,
+		                CMNTY_NOTICE_YN
+		        FROM COMMUNITY
+		        where CMNTY_TYPE = 'GroNotice' and
+		              CMNTY_DEL_YN = 'N'
+		              <include refid="cmntycSearch"/>
+		        order by CMNTY_NOTICE_YN desc, cmnty_reg_dt desc) b
+        <![CDATA[
+        where b.rnum >= #{startRow} and b.rnum <= #{endRow}
+        ]]>
+	</select>
+	
+	<!-- 그루베어 시스템 공지사항 디테일 가져오기 -->
+	<select id="groNoticeSelectOne" parameterType="int" resultMap="cmntyNoticeMap">
+		select C.cmnty_no,C.emp_id,C.co_cd,C.atch_file_cd,C.cmnty_type,
+		        C.cmnty_ttl,C.cmnty_reg_dt,C.cmnty_mdfcn_dt,C.cmnty_cn,C.cmnty_del_yn,
+		        C.cmnty_inq_cnt,C.cmnty_notice_yn,C.cmnty_prvt_pst_yn,
+		        c.ATCH_FILE_DEL_YN, c.ATCH_FILE_REG_DT,
+		        D.ATCH_FILE_DETAIL_CD, D.ATCH_FILE_DETAIL_PATH_NM, D.ATCH_FILE_DETAIL_EXTN_NM, D.ATCH_FILE_DETAIL_SIZE, 
+		        D.ATCH_FILE_DETAIL_FANCYSIZE, D.ATCH_FILE_DETAIL_ORGNL_NM, D.ATCH_FILE_DETAIL_STRG_NM, D.ATCH_FILE_DETAIL_REG_DT, 
+		        D.ATCH_FILE_DETAIL_DEL_YN
+		FROM (SELECT  C.cmnty_no,C.emp_id,C.co_cd,C.atch_file_cd,C.cmnty_type,
+		        C.cmnty_ttl,C.cmnty_reg_dt,C.cmnty_mdfcn_dt,C.cmnty_cn,C.cmnty_del_yn,
+		        C.cmnty_inq_cnt,C.cmnty_notice_yn,C.cmnty_prvt_pst_yn,
+		        a.ATCH_FILE_DEL_YN, a.ATCH_FILE_REG_DT
+		      FROM COMMUNITY c LEFT OUTER JOIN ATCH_FILE A ON (c.ATCH_FILE_CD = A.ATCH_FILE_CD)
+		      ) c            
+		      LEFT OUTER JOIN (SELECT * from  ATCH_FILE_DETAIL where ATCH_FILE_DETAIL_DEL_YN = 'N') d ON (c.ATCH_FILE_CD = d.ATCH_FILE_CD)
+		where c.CMNTY_NO = #{cmntyNo}
+	</select>
+	
+	<!-- 파일 디테일 불러오기 (다운로드) -->
+	<select id="atchFileDetailOneSelect" parameterType="String" resultType="kr.or.ddit.comm.file.vo.AtchFileDetailVO">
+		SELECT atch_file_detail_cd
+		   ,atch_file_cd
+		   ,atch_file_detail_path_nm
+		   ,atch_file_detail_extn_nm
+		   ,atch_file_detail_size
+		   ,atch_file_detail_fancysize
+		   ,atch_file_detail_orgnl_nm
+		   ,atch_file_detail_strg_nm
+		   ,atch_file_detail_reg_dt
+		   ,emp_id
+		   ,atch_file_detail_del_yn
+		FROM atch_file_detail
+		WHERE atch_file_detail_cd = #{atchFileDetailCd}
+	</select>
+	
+	<!-- 파일 디테일 리스트 불러오기 (다운로드) -->
+	<select id="atchFileDetailListSelect" parameterType="String" resultType="kr.or.ddit.comm.file.vo.AtchFileDetailVO">
+		SELECT atch_file_detail_cd
+		   ,atch_file_cd
+		   ,atch_file_detail_path_nm
+		   ,atch_file_detail_extn_nm
+		   ,atch_file_detail_size
+		   ,atch_file_detail_fancysize
+		   ,atch_file_detail_orgnl_nm
+		   ,atch_file_detail_strg_nm
+		   ,atch_file_detail_reg_dt
+		   ,emp_id
+		   ,atch_file_detail_del_yn
+		FROM atch_file_detail
+		WHERE atch_file_cd = #{atchFileCd} and
+		      atch_file_detail_del_yn = 'N'
+	</select>
+	
+	<!-- 공지사항 등록하기 -->
+	<insert id="cmntyNoticeInsert" parameterType="kr.or.ddit.comm.cmnty.vo.CmntyVO">
+		<selectKey keyProperty="cmntyNo" order="BEFORE" resultType="int">
+			select seq_community.nextval from dual
+		</selectKey>
+		INSERT INTO community (
+		    cmnty_no
+		   ,emp_id
+		   ,co_cd
+		   ,atch_file_cd
+		   
+		   ,cmnty_type
+		   ,cmnty_ttl
+		   ,cmnty_cn
+		   ,cmnty_notice_yn
+		) VALUES (
+		   #{cmntyNo}
+		   ,#{empId}
+		   ,#{coCd}
+		   ,#{atchFileCd}
+		   
+		   ,'GroNotice'
+		   ,#{cmntyTtl}
+		   ,#{cmntyCn}
+		   ,#{cmntyNoticeYn}
+		)
+	</insert>
+	
+	<!-- 파일 그룹 등록하기 -->
+	<insert id="atchFileInsert" parameterType="kr.or.ddit.comm.cmnty.vo.CmntyVO">
+		<selectKey keyProperty="atchFileCd" order="BEFORE" resultType="String">
+			select 'GRONTC' || SEQ_ATCH_FILE_CD.nextval from dual
+		</selectKey>
+		INSERT INTO atch_file (
+		    atch_file_cd
+		   ,emp_id
+		) VALUES (
+		    #{atchFileCd}
+		   ,#{empId}
+		)
+	</insert>
+	
+	<!-- 개별 파일 등록하기 -->
+	<insert id="fileDetailInsert" parameterType="kr.or.ddit.comm.file.vo.AtchFileDetailVO">
+		INSERT INTO atch_file_detail (
+		    atch_file_detail_cd
+		   ,atch_file_cd
+		   ,atch_file_detail_path_nm
+		   ,atch_file_detail_extn_nm
+		   ,atch_file_detail_size
+		   ,atch_file_detail_fancysize
+		   ,atch_file_detail_orgnl_nm
+		   ,atch_file_detail_strg_nm
+		   ,emp_id
+		) VALUES (
+		    'GRONTCD' || SEQ_ATCH_FILE_DETAIL_CD.nextval
+		   ,#{atchFileCd}
+		   ,#{atchFileDetailPathNm}
+		   ,#{atchFileDetailExtnNm}
+		   ,#{atchFileDetailSize}
+		   ,#{atchFileDetailFancysize}
+		   ,#{atchFileDetailOrgnlNm}
+		   ,#{atchFileDetailStrgNm}
+		   ,#{empId}
+		)
+	</insert>
+	
+	<!-- 공지사항 수정하기 -->
+	<update id="cmntyNoticeModify" parameterType="kr.or.ddit.comm.cmnty.vo.CmntyVO">
+		UPDATE community
+		SET emp_id = #{empId},
+		    atch_file_cd = #{atchFileCd, jdbcType=VARCHAR},
+		    cmnty_ttl = #{cmntyTtl},
+		    cmnty_cn = #{cmntyCn},
+		    cmnty_mdfcn_dt = sysdate,
+		    cmnty_notice_yn = #{cmntyNoticeYn}
+		WHERE cmnty_no = #{cmntyNo}
+	</update>
+	
+	<!-- 공지사항 파일 수정하기 -->
+	<update id="cmntyNoticeFileDetailModify" parameterType="kr.or.ddit.comm.cmnty.vo.CmntyVO">
+		UPDATE ATCH_FILE_DETAIL
+		SET    ATCH_FILE_DETAIL_DEL_YN = 'Y'
+		WHERE  ATCH_FILE_CD = #{atchFileCd}
+		AND    ATCH_FILE_DETAIL_CD NOT IN
+		<foreach collection="atchFileUpdateList" item="atchFileDetailVO" open="(" close=")" separator=",">
+		 	#{atchFileDetailVO.atchFileDetailCd}
+		</foreach>
+	</update>
+	
+	<!-- 공지사항 삭제 처리 -->
+	<update id="cmntyNoticeDelete" parameterType="int">
+		UPDATE community
+		SET cmnty_del_yn = 'Y'
+		WHERE cmnty_no = #{cmntyNo}
+	</update>
+	
+	<!-- 공지사항에 속한 파일들 삭제 처리 -->
+	<update id="fileDetailDelete" parameterType="String">
+		UPDATE ATCH_FILE_DETAIL
+		SET ATCH_FILE_DETAIL_DEL_YN = 'Y'
+		WHERE ATCH_FILE_CD = #{atchFileCd}
+	</update>
+	
+	<!-- 조회수 증가시키기 -->
+	<update id="incrementHit" parameterType="int">
+		UPDATE community
+		SET CMNTY_INQ_CNT = CMNTY_INQ_CNT + 1
+		WHERE cmnty_no = #{cmntyNo}
+	</update>
+	
+	<!-- Q&A 게시판 리스트의 수 가져오기 -->
+	<select id="qstnSelectListCount" parameterType="kr.or.ddit.comm.paging.vo.PaginationInfoVO" resultType="int">
+		select count(*)
+		from (SELECT row_number() over (order by cmnty_reg_dt desc) rnum,
+		                C.CMNTY_NO CMNTY_NO,
+		                C.EMP_ID QSTN_EMP_ID,
+		                C.CO_CD CO_CD,
+		                C.CMNTY_TYPE CMNTY_TYPE,
+		                C.CMNTY_TTL CMNTY_TTL,
+		                C.CMNTY_REG_DT CMNTY_REG_DT,
+		                C.CMNTY_MDFCN_DT CMNTY_MDFCN_DT,
+		                C.CMNTY_CN CMNTY_CN,
+		                C.CMNTY_DEL_YN CMNTY_DEL_YN,
+		                C.CMNTY_INQ_CNT CMNTY_INQ_CNT,
+		                C.COM_DTL_CD COM_DTL_CD,
+		                C.CMNTY_QSTN_STTS_YN CMNTY_QSTN_STTS_YN,
+		                C.CMNTY_PRVT_PST_YN CMNTY_PRVT_PST_YN,
+		                D.COM_CD COM_CD,
+		                D.COM_DTL_CD_NM COM_DTL_CD_NM
+		        FROM COMMUNITY C inner join COMMON_DETAIL_CODE D on (c.com_dtl_cd = d.com_dtl_cd)
+		        where CMNTY_TYPE = 'Qstn' and
+		              CMNTY_DEL_YN = 'N'
+		              <include refid="cmntycSearch"/>
+				      <if test="cmntyType != null and cmntyType != ''">
+				       	 and c.COM_DTL_CD = #{cmntyType}
+				      </if>
+				      <if test="cmntyQstnSttsYn != null and cmntyQstnSttsYn != ''">
+				       	 and c.CMNTY_QSTN_STTS_YN = 'N'
+				      </if>
+		        order by cmnty_reg_dt desc) b
+	</select>
+	
+	<!-- Q&A 게시판 리스트 가져오기 -->
+	<select id="qstnSelectList" parameterType="kr.or.ddit.comm.paging.vo.PaginationInfoVO" resultType="kr.or.ddit.comm.cmnty.vo.CmntyVO">
+		select b.*
+		from (SELECT row_number() over (order by cmnty_reg_dt desc) rnum,
+		                C.CMNTY_NO CMNTY_NO,
+		                C.EMP_ID QSTN_EMP_ID,
+		                C.CO_CD CO_CD,
+		                C.CMNTY_TYPE CMNTY_TYPE,
+		                C.CMNTY_TTL CMNTY_TTL,
+		                C.CMNTY_REG_DT CMNTY_REG_DT,
+		                C.CMNTY_MDFCN_DT CMNTY_MDFCN_DT,
+		                C.CMNTY_CN CMNTY_CN,
+		                C.CMNTY_DEL_YN CMNTY_DEL_YN,
+		                C.CMNTY_INQ_CNT CMNTY_INQ_CNT,
+		                C.COM_DTL_CD COM_DTL_CD,
+		                C.CMNTY_QSTN_STTS_YN CMNTY_QSTN_STTS_YN,
+		                C.CMNTY_PRVT_PST_YN CMNTY_PRVT_PST_YN,
+		                D.COM_CD COM_CD,
+		                D.COM_DTL_CD_NM COM_DTL_CD_NM
+		        FROM COMMUNITY C inner join COMMON_DETAIL_CODE D on (c.com_dtl_cd = d.com_dtl_cd)
+		        where CMNTY_TYPE = 'Qstn' and
+		              CMNTY_DEL_YN = 'N'
+		              <include refid="cmntycSearch"/>
+				      <if test="cmntyType != null and cmntyType != ''">
+				       	 and c.COM_DTL_CD = #{cmntyType}
+				      </if>
+				      <if test="cmntyQstnSttsYn != null and cmntyQstnSttsYn != ''">
+				       	 and c.CMNTY_QSTN_STTS_YN = 'N'
+				      </if>
+		        order by cmnty_reg_dt desc) b
+		<![CDATA[
+        where b.rnum >= #{startRow} and b.rnum <= #{endRow}
+        ]]>
+	</select>
+	
+	<!-- Q&A 디테일 가져오기 -->
+	<select id="qstnSelectOne" parameterType="int" resultType="kr.or.ddit.comm.cmnty.vo.CmntyVO">
+		SELECT C.cmnty_no, C.emp_id as qstn_emp_id, C.co_cd, C.atch_file_cd, C.cmnty_type
+		        ,C.cmnty_ttl, C.cmnty_reg_dt, C.cmnty_mdfcn_dt, C.cmnty_cn, C.cmnty_del_yn
+		        ,C.cmnty_inq_cnt, C.cmnty_notice_yn, C.com_dtl_cd, d.com_dtl_cd_nm, C.cmnty_qstn_stts_yn, C.cmnty_prvt_pst_yn,
+		         M.COMMENT_NO, M.EMP_ID as answr_emp_id, M.CMNT_CN, M.CMNT_REG_DT, M.UP_CMNT_NO
+		FROM community C 
+		     INNER JOIN 
+		     common_detail_code d on (c.com_dtl_cd = d.com_dtl_cd)
+		     lEFT OUTER JOIN 
+		     COMMEMT M ON (C.CMNTY_NO = M.CMNTY_NO)
+		WHERE c.cmnty_no = #{cmntyNo}
+	</select>
+	
+	<!-- Q&A에 답변 등록하기 -->
+	<insert id="cmntyReplyInsert" parameterType="kr.or.ddit.comm.cmnty.vo.CmtVO">
+		<selectKey keyProperty="commentNo" order="BEFORE" resultType="int">
+			select SEQ_COMMEMT.nextval from dual
+		</selectKey>
+		INSERT INTO commemt (
+		    comment_no
+		   ,cmnty_no
+		   ,emp_id
+		   ,cmnt_cn
+		   ,cmnt_reg_dt
+		) VALUES (
+		    #{commentNo}
+		   ,#{cmntyNo}
+		   ,#{empId}
+		   ,#{cmntCn}
+		   ,sysdate
+		)
+	</insert>
+	
+	<!-- Q&A에 답변을 등록 또는 삭제에 따라 Q&A의 답변상태여부도 업데이트하기-->
+	<insert id="cmntyQstnSttsUpdate" parameterType="map">
+		UPDATE community
+		SET cmnty_qstn_stts_yn = #{cmntyQstnSttsYn}
+		WHERE cmnty_no = #{cmntyNo}
+	</insert>
+	
+	<!-- Q&A 삭제 처리하기-->
+	<update id="cmntyQstnDelYnUpdate" parameterType="int">
+		UPDATE COMMUNITY
+		SET CMNTY_DEL_YN = 'Y'                                                                                                                                                                                                                
+		WHERE CMNTY_NO = #{cmntyNo}
+	</update>
+	
+	<!-- Q&A 답변 삭제 처리하기 -->
+	<delete id="cmntyReplyDelYnDelete" parameterType="int">
+		delete from commemt
+		where comment_no = #{commentNo}
+	</delete>
+	
+	<!-- Q&A에 등록한 답변 수정하기-->
+	<update id="cmntyReplyModify" parameterType="kr.or.ddit.comm.cmnty.vo.CmtVO">
+		update commemt
+		set CMNT_CN = #{cmntCn},
+		    CMNT_REG_DT = sysdate
+		where COMMENT_NO = #{commentNo}                                                                                                                                                                                                        
+	</update>
+	
+	<!-- Q&A 카테고리별 전체 게시물과 Q&A 미답변 게시물 카운트하기 -->
+	<select id="qstnSttsAndListCount" resultType="kr.or.ddit.comm.cmnty.vo.CmntyVO">
+		select COM_DTL_CD, CMNTY_TYPE, nvl(cmntyQstnSttsYCount, 0) as cmntyQstnSttsYCount, nvl(cmntyQstnSttsNCount, 0) as cmntyQstnSttsNCount,
+		       nvl(cmntyQstnAllcount, 0) as cmntyQstnAllcount, nvl(cmntyQstnSttsAllN, 0) as cmntyQstnSttsAllN
+		from (select a.COM_DTL_CD, a.CMNTY_TYPE, a.cmntyQstnSttsYCount, b.cmntyQstnSttsNCount,
+		                null as cmntyQstnAllcount, null as cmntyQstnSttsAllN
+		        from (select COM_DTL_CD, count(*) as cmntyQstnSttsYCount, CMNTY_TYPE
+		                from community
+		                where CMNTY_TYPE = 'Qstn' and
+                      	 	  CMNTY_QSTN_STTS_YN = 'Y'
+		                group by COM_DTL_CD, CMNTY_TYPE) a
+		              inner join
+		             (select a.COM_DTL_CD, nvl(cmntyQstnSttsNCount, 0) as cmntyQstnSttsNCount
+		                from (select COM_DTL_CD
+		                            from community
+		                            where CMNTY_TYPE = 'Qstn'
+		                            group by COM_DTL_CD) a
+		                     left outer join
+		                      (select COM_DTL_CD, count(*) as cmntyQstnSttsNCount
+		                                from community
+		                                where CMNTY_TYPE = 'Qstn' and
+		                                      CMNTY_QSTN_STTS_YN = 'N'
+		                                group by COM_DTL_CD) b
+		                     on (a.COM_DTL_CD = b.COM_DTL_CD)) b
+		              on (a.COM_DTL_CD = b.COM_DTL_CD)
+		              
+		        union
+		        
+		        select null as COM_DTL_CD, null as CMNTY_TYPE, null as cmntyQstnSttsYCount, null as cmntyQstnSttsNCount, 
+		                c.cmntyQstnAllcount, d.cmntyQstnSttsAllN
+		        from (select CMNTY_TYPE, count(*) as cmntyQstnAllcount
+		                from community
+		                where CMNTY_TYPE = 'Qstn'
+		                group by CMNTY_TYPE) c
+		              inner join
+		             (select CMNTY_TYPE, count(*) as cmntyQstnSttsAllN
+		                from community
+		                where CMNTY_TYPE = 'Qstn' and
+		                      CMNTY_QSTN_STTS_YN = 'N'
+		                group by CMNTY_TYPE) d
+		              on (c.CMNTY_TYPE = d.CMNTY_TYPE) )
+	</select>
+	
+	<!-- Q&A 홈피드용 공지사항 리스트 가져오기 -->
+	<select id="groNoticeSelectListWidjet" resultType="kr.or.ddit.comm.cmnty.vo.CmntyVO">
+		select b.*
+		from (SELECT row_number() over (order by CMNTY_NOTICE_YN desc, cmnty_reg_dt desc) rnum,
+		                CMNTY_NO ,
+		                EMP_ID ,
+		                CO_CD ,
+		                ATCH_FILE_CD ,
+		                CMNTY_TYPE ,
+		                CMNTY_TTL ,
+		                CMNTY_REG_DT ,
+		                CMNTY_MDFCN_DT ,
+		                CMNTY_CN ,
+		                CMNTY_DEL_YN ,
+		                CMNTY_INQ_CNT,
+		                CMNTY_NOTICE_YN
+		        FROM COMMUNITY
+		        where CMNTY_TYPE = 'GroNotice' and
+		              CMNTY_DEL_YN = 'N'
+		        order by CMNTY_NOTICE_YN desc, cmnty_reg_dt desc) b
+		<![CDATA[
+        where b.rnum >= 1 and b.rnum <= 6
+        ]]>
+	</select>
+	
+  </mapper>

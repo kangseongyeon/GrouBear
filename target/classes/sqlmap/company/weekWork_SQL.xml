@@ -1,0 +1,241 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+  PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+  "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+  
+  <mapper namespace="kr.or.ddit.company.work.mapper.IComWorkMapper">
+  	
+  	<resultMap type="DepartmentVO" id="deptMap">
+		<id property="deptCd" column="dept_cd"/>
+		<result property="deptCd" column="dept_cd" />
+		<result property="coCd" column="co_cd" />
+		<result property="deptNm" column="dept_nm" />
+		<result property="deptCrtDt" column="dept_crt_dt" />
+		<result property="deptActvtnYn" column="dept_actvtn_yn" />
+		<result property="deptImgFileUrl" column="dept_img_file_url" />
+		<collection property="teamVO" resultMap="teamMap"></collection>
+	</resultMap>
+
+	<resultMap type="TeamVO" id="teamMap">
+		<id property="teamCd" column="team_cd"/>
+		<result property="teamCd" column="team_cd" />
+		<result property="deptCd" column="dept_cd" />
+		<result property="teamNm" column="team_nm" />
+		<result property="teamCrtDt" column="team_crt_dt" />
+		<result property="teamActvtnYn" column="team_actvtn_yn" />
+	</resultMap>
+	
+  	
+  	<sql id="weekWorkSearch">
+      <if test="searchWord != null">
+         and (
+         		emp_id like '%' || #{searchWord} || '%' or
+         		dept_nm like '%' || #{searchWord} || '%' or
+         		team_nm like '%' || #{searchWord} || '%' or
+         	)
+      </if>
+   </sql>
+  	
+  	
+  	<resultMap type="kr.or.ddit.company.work.vo.weekWorkStatusVO" id="weekWorkMap">
+		<id property="empId" column="emp_id"/>
+        <result property="coCd" column="co_cd" />
+        <result property="empNm" column="emp_nm" />
+        <result property="deptNm" column="dept_nm" />
+        <result property="teamNm" column="team_nm" />
+        <collection property="week" resultMap="workMap"/>
+  	</resultMap>
+
+	<resultMap type="kr.or.ddit.company.work.vo.workStatusVO" id="workMap">
+		<result property="workSttsCd" column="work_stts_cd" /> 
+		<result property="workSttsYmd" column="work_stts_ymd" />
+		<result property="workBgngTm" column="work_bgng_tm" />
+		<result property="workEndTm" column="work_end_tm" />
+		<result property="workTm" column="work_tm" />
+		<result property="workType" column="work_type" />
+		<result property="workRegDt" column="work_reg_dt" />
+		<result property="workMdfcnDt" column="work_mdfcn_dt" />
+		<result property="workMdfcnRsn" column="work_mdfcn_rsn" />
+	</resultMap>  	
+  	
+  	<select id="getWeekWorkStatus" parameterType="kr.or.ddit.comm.paging.vo.PaginationInfoVO" resultMap="weekWorkMap">
+	
+		select h.*
+				from (
+				    select g.*, row_number() over (order by EMP_ID desc) rnum
+				from (    
+					SELECT 
+						e.EMP_ID, e.DEPT_NM, e.TEAM_NM, f.WORK_STTS_CD, TO_CHAR(f.WORK_STTS_YMD,'dd') WORK_STTS_YMD, f.WORK_BGNG_TM, f.WORK_END_TM, f.WORK_TM, f.WORK_TYPE
+					FROM (
+						SELECT 
+							c.EMP_ID, c.DEPT_NM, d.TEAM_NM 
+						FROM(
+							SELECT 
+								a.EMP_ID, a.TEAM_CD , b.DEPT_NM
+							FROM (
+								SELECT EMP_ID, DEPT_CD, TEAM_CD FROM EMPLOYEE WHERE CO_CD = #{coCd}
+								) a
+							LEFT OUTER JOIN 
+								DEPARTMENT b
+							ON
+							 	a.DEPT_CD = b.DEPT_CD
+							 ) c
+						LEFT OUTER JOIN 
+							TEAM d
+						ON c.TEAM_CD = d.TEAM_CD 
+						) e
+					LEFT OUTER JOIN (
+						SELECT 
+							 EMP_ID, WORK_STTS_CD, WORK_STTS_YMD, WORK_BGNG_TM, WORK_END_TM, WORK_TM, WORK_TYPE 
+						FROM 
+						WORK_STATUS 
+						WHERE 
+							WORK_STTS_YMD BETWEEN #{startDay} AND #{endDay}
+						) f
+					ON 
+						e.EMP_ID = f.EMP_ID
+					where 1 =1 
+					<include refid="weekWorkSearch"/>
+		        	order by EMP_ID desc
+				  ) g
+		    ) h
+		<![CDATA[
+		where b.rnum >= #{startRow} and b.rnum <= #{endRow}
+		]]>
+		order by EMP_ID desc
+  	</select>
+  
+  	<select id="getWeekWorkStatusCount" parameterType="kr.or.ddit.comm.paging.vo.PaginationInfoVO" resultType="int">
+  			select h.count(*)
+				from (
+				    select g.*, row_number() over (order by EMP_ID desc) rnum
+				from (    
+					SELECT 
+						e.EMP_ID, e.DEPT_NM, e.TEAM_NM, f.WORK_STTS_CD, TO_CHAR(f.WORK_STTS_YMD,'dd') WORK_STTS_YMD, f.WORK_BGNG_TM, f.WORK_END_TM, f.WORK_TM, f.WORK_TYPE
+					FROM (
+						SELECT 
+							c.EMP_ID, c.DEPT_NM, d.TEAM_NM 
+						FROM(
+							SELECT 
+								a.EMP_ID, a.TEAM_CD , b.DEPT_NM
+							FROM (
+								SELECT EMP_ID, DEPT_CD, TEAM_CD FROM EMPLOYEE WHERE CO_CD = #{coCd}
+								) a
+							LEFT OUTER JOIN 
+								DEPARTMENT b
+							ON
+							 	a.DEPT_CD = b.DEPT_CD
+							 ) c
+						LEFT OUTER JOIN 
+							TEAM d
+						ON c.TEAM_CD = d.TEAM_CD 
+						) e
+					LEFT OUTER JOIN (
+						SELECT 
+							 EMP_ID, WORK_STTS_CD, WORK_STTS_YMD, WORK_BGNG_TM, WORK_END_TM, WORK_TM, WORK_TYPE 
+						FROM 
+						WORK_STATUS 
+						WHERE 
+							WORK_STTS_YMD BETWEEN #{startDay} AND #{endDay}
+						) f
+					ON 
+						e.EMP_ID = f.EMP_ID
+					where 1 =1 
+					<include refid="weekWorkSearch"/>
+		        	order by EMP_ID desc
+				  ) g
+		    ) h
+		<![CDATA[
+		where b.rnum >= #{startRow} and b.rnum <= #{endRow}
+		]]>
+		order by EMP_ID desc
+  	</select>
+  	
+  	<select id="chkDeptWorkForm" parameterType="kr.or.ddit.comm.security.vo.EmployeeVO" resultType="kr.or.ddit.company.workform.vo.WorkFormVO">
+  		SELECT *
+		FROM WORK_FORM 
+		WHERE DEPARTMENT_CD = #{deptCd}
+  	
+  	</select>
+  	
+  	<sql id="infoSearch">
+  		<if test="searchWord != null">
+  			and (
+         		e.emp_nm like '%' || #{searchWord} || '%' or
+         		d.dept_nm like '%' || #{searchWord} || '%' or
+         		t.team_nm like '%' || #{searchWord} || '%' 
+         	)
+  		</if>
+  	</sql>
+  
+  	<select id="empListCount" parameterType="kr.or.ddit.comm.paging.vo.PaginationInfoVO" resultType="int">
+  		SELECT COUNT (*) total_count
+		FROM (
+		    SELECT
+                E.EMP_ID AS EMP_ID, E.CO_CD, D.DEPT_NM AS DEPT_CD, J.JBGD_NM AS JBGD_CD, T.TEAM_NM AS TEAM_CD, E.EMP_PW, E.EMP_EML_ADDR, E.EMP_NM AS EMP_NM,
+			    E.EMP_NO, E.EMP_ZIP, E.EMP_ADDR, E.EMP_DADDR, E.EMP_TELNO, E.EMP_BRDT, E.EMP_GNDR,
+			    E.EMP_NTN, E.EMP_JNCMP_YMD, E.EMP_RSGNTN_YMD, E.EMP_CRT_YMD, E.EMP_MDFCN_YMD,
+			    E.EMP_DEL_YN, E.EMP_APRV_YN, E.ENABLED, E.EMP_DLN_YN, E.IMG_FILE_URL
+            FROM
+                EMPLOYEE E, DEPARTMENT D, JOBGRADE J, TEAM T
+            WHERE
+                E.DEPT_CD = D.DEPT_CD AND E.JBGD_CD = J.JBGD_CD AND E.TEAM_CD = T.TEAM_CD AND EMP_DEL_YN = 'N'
+				<include refid="infoSearch"/> 
+		)
+  	</select>
+  	
+  	<!-- 기안 문서함 리스트 -->
+  	<select id="selectEmpPaging" parameterType="kr.or.ddit.comm.paging.vo.PaginationInfoVO" resultType="kr.or.ddit.comm.security.vo.EmployeeVO">
+  		SELECT
+		    b.*
+		FROM (
+		    SELECT
+		        a.*, row_number() over (order by a.emp_nm asc) rnum 
+		    FROM (
+            SELECT
+                E.EMP_ID AS EMP_ID, E.CO_CD, D.DEPT_NM AS DEPT_CD, J.JBGD_NM AS JBGD_CD, T.TEAM_NM AS TEAM_CD, E.EMP_PW, E.EMP_EML_ADDR, E.EMP_NM AS EMP_NM,
+			    E.EMP_NO, E.EMP_ZIP, E.EMP_ADDR, E.EMP_DADDR, E.EMP_TELNO, E.EMP_BRDT, E.EMP_GNDR,
+			    E.EMP_NTN, E.EMP_JNCMP_YMD, E.EMP_RSGNTN_YMD, E.EMP_CRT_YMD, E.EMP_MDFCN_YMD,
+			    E.EMP_DEL_YN, E.EMP_APRV_YN, E.ENABLED, E.EMP_DLN_YN, E.IMG_FILE_URL
+            FROM
+                EMPLOYEE E, DEPARTMENT D, JOBGRADE J, TEAM T
+            WHERE
+                E.DEPT_CD = D.DEPT_CD AND E.JBGD_CD = J.JBGD_CD AND E.TEAM_CD = T.TEAM_CD AND EMP_DEL_YN = 'N'
+		        <include refid="infoSearch"/>
+		        ORDER BY E.EMP_NM ASC
+		    ) a
+		) b
+		<![CDATA[
+			WHERE b.rnum >= #{startRow} and b.rnum <= #{endRow}
+		]]>
+  	</select>
+  	
+  	<select id="getEwsList" resultType="kr.or.ddit.employee.workStatus.vo.EmpWorkStatusVO">
+  		SELECT  e.EMP_ID,e.dept_nm, e.team_nm ,e.emp_nm ,ws.WORK_STTS_CD, ws.WORK_STTS_YMD, 
+			   nvl(ws.WORK_BGNG_TM,'0') WORK_BGNG_TM, nvl(ws.WORK_END_TM,'0') WORK_END_TM, ws.WORK_TM, nvl(ws.WORK_TYPE,'-') WORK_TYPE, 
+			   ws.WORK_REG_DT, ws.WORK_MDFCN_DT, ws.WORK_MDFCN_RSN 
+		FROM
+			(SELECT 
+					e.EMP_ID, e.Emp_nm,e.CO_CD , t.team_nm, DEPT_NM 
+				FROM 
+					EMPLOYEE e, TEAM t, DEPARTMENT dp
+				WHERE 
+					e.TEAM_CD = t.TEAM_CD AND dp.DEPT_CD = e.DEPT_CD 
+				) e LEFT OUTER JOIN (
+				SELECT 
+					ws.WORK_STTS_CD, ws.EMP_ID, ws.WORK_STTS_YMD, ws.WORK_BGNG_TM, ws.WORK_END_TM, ws.WORK_TM, cc.COM_DTL_CD_NM WORK_TYPE, ws.WORK_REG_DT, ws.WORK_MDFCN_DT, ws.WORK_MDFCN_RSN 
+				FROM 
+					WORK_STATUS ws LEFT OUTER JOIN COMMON_DETAIL_CODE cc 
+				ON 
+					ws.WORK_TYPE = cc.COM_DTL_CD
+				WHERE 
+					TO_CHAR(WORK_STTS_YMD, 'yyyy-MM-dd') = #{workSttsYmd}
+				) ws
+		  	ON e.EMP_ID = ws.EMP_ID 
+		  	WHERE e.CO_CD = #{coCd}
+  	</select>
+  	
+  	
+  </mapper>
+  
+  

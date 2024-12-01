@@ -1,0 +1,65 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+  PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+  "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="kr.or.ddit.company.companyLog.mapper.ICompanyLogMapper">
+	
+	<sql id="comLogSearch">
+      <if test="searchWord != null">
+         and (
+         		log_crt_dt like '%' || #{searchWord} || '%' or
+         		emp_nm like '%' || #{searchWord} || '%' or
+         		emp_id like '%' || #{searchWord} || '%' or
+         		log_ip like '%' || #{searchWord} || '%' or
+         		log_detail like '%' || #{searchWord} || '%'
+         	)
+      </if>
+   </sql>
+	
+	
+	<select id="selectCompanyLog" parameterType="map" resultType="int">
+    SELECT COUNT(*)
+    FROM log
+    INNER JOIN employee emp ON log.emp_id = emp.emp_id
+    LEFT JOIN company c ON emp.co_cd = c.co_cd
+    LEFT JOIN department d ON emp.jbgd_cd = d.dept_cd
+    WHERE emp.co_cd = #{coCd}
+    <if test="jbgdCd != null and jbgdCd != ''">
+        AND emp.jbgd_cd = #{jbgdCd}
+    </if>
+	</select>
+
+
+<select id="getcompanyLog" parameterType="PaginationInfoVO" resultType="LogVO">
+    SELECT *
+    FROM (
+        SELECT
+            log.log_co_cd,
+            emp.emp_nm,
+            log.log_crt_dt,
+            log.log_ip,
+            log.log_detail,
+            log.emp_id,
+            emp.co_cd,
+            emp.jbgd_cd,
+            c.CO_NM AS company_name,
+            d.DEPT_NM AS department_name,
+            ROW_NUMBER() OVER (ORDER BY log.log_co_cd DESC) AS rnum
+        FROM
+            log
+        INNER JOIN employee emp ON log.emp_id = emp.emp_id
+        LEFT JOIN company c ON emp.co_cd = c.co_cd
+        LEFT JOIN department d ON emp.jbgd_cd = d.dept_cd
+        WHERE
+            emp.co_cd = #{coCd}
+            <if test="jbgdCd != null and jbgdCd != ''">
+                AND emp.jbgd_cd = #{jbgdCd}
+            </if>
+    ) b
+   <![CDATA[
+        WHERE b.rnum >= #{startRow} AND b.rnum <= #{endRow}
+    ]]>
+</select>
+
+</mapper>

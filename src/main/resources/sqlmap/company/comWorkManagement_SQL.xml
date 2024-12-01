@@ -1,0 +1,272 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+  PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+  "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="kr.or.ddit.company.workform.mapper.IComWorkManagementMapper">
+	
+	<sql id="todayWorkStatusSearch">
+      <if test="searchWord != null">
+         and (
+         		e.emp_Nm like '%' || #{searchWord} || '%' or
+         		ws.work_type like '%' || #{searchWord} || '%'
+         	)
+      </if>
+   </sql>
+	
+	
+	
+	<insert id="insertBaseWorkForm" parameterType="kr.or.ddit.company.workform.vo.WorkFormVO">
+		<selectKey keyProperty="workFormCd" resultType="string" order="BEFORE">
+			select ('WF'||SEQ_WF_CD.nextval) FROM DUAL
+		</selectKey>
+		INSERT INTO WORK_FORM(
+			WORK_FORM_CD,
+			CO_CD,
+			WORK_FORM_GTWK_TM,
+			WORK_FORM_BREAK_BGNG_TM,
+			WORK_FORM_BREAK_END_TM, 
+			WORK_FORM_LVRM_TM,
+			WORK_FORM_SUN_YN,
+			WORK_FORM_MON_YN,
+			WORK_FORM_TUE_YN, 
+			WORK_FORM_WEB_YN,
+			WORK_FORM_THU_YN, 
+			WORK_FORM_FRI_YN, 
+			WORK_FORM_SAT_YN,
+			WORK_FORM_REG_YMD 
+		)VALUES(
+			#{workFormCd},
+			#{coCd},
+			#{workFormGtwkTm},
+			#{workFormBreakBgngTm},
+			#{workFormBreakEndTm},
+			#{workFormLvrmTm},
+			#{workFormSunYn},
+			#{workFormMonYn},
+			#{workFormTueYn},
+			#{workFormWebYn},
+			#{workFormThuYn},
+			#{workFormFriYn},
+			#{workFormSatYn}, 
+			SYSDATE 
+		)
+	</insert>
+	<insert id="insertDeptWorkForm" parameterType="kr.or.ddit.company.workform.vo.WorkFormVO">
+		<selectKey keyProperty="workFormCd" resultType="string" order="BEFORE">
+			select ('WF'||SEQ_WF_CD.nextval) FROM DUAL
+		</selectKey>
+		INSERT INTO WORK_FORM(
+			WORK_FORM_CD,
+			CO_CD,
+			DEPARTMENT_CD,
+			WORK_FORM_GTWK_TM,
+			WORK_FORM_BREAK_BGNG_TM,
+			WORK_FORM_BREAK_END_TM, 
+			WORK_FORM_LVRM_TM,
+			WORK_FORM_SUN_YN,
+			WORK_FORM_MON_YN,
+			WORK_FORM_TUE_YN, 
+			WORK_FORM_WEB_YN,
+			WORK_FORM_THU_YN, 
+			WORK_FORM_FRI_YN, 
+			WORK_FORM_SAT_YN,
+			WORK_FORM_REG_YMD 
+		)VALUES(
+			#{workFormCd},
+			#{coCd},
+			#{departmentCd},
+			#{workFormGtwkTm},
+			#{workFormBreakBgngTm},
+			#{workFormBreakEndTm},
+			#{workFormLvrmTm},
+			#{workFormSunYn},
+			#{workFormMonYn},
+			#{workFormTueYn},
+			#{workFormWebYn},
+			#{workFormThuYn},
+			#{workFormFriYn},
+			#{workFormSatYn}, 
+			SYSDATE 
+		)
+	</insert>
+	
+	<select id="getBaseWorkForm" parameterType="kr.or.ddit.comm.security.vo.EmployeeVO" resultType="kr.or.ddit.company.workform.vo.WorkFormVO">
+		SELECT WORK_FORM_CD, CO_CD, DEPARTMENT_CD, WORK_FORM_GTWK_TM, WORK_FORM_BREAK_BGNG_TM, WORK_FORM_BREAK_END_TM, WORK_FORM_STTS, WORK_FORM_LVRM_TM, WORK_FORM_SUN_YN, WORK_FORM_MON_YN, WORK_FORM_TUE_YN, WORK_FORM_WEB_YN, WORK_FORM_THU_YN, WORK_FORM_FRI_YN, WORK_FORM_SAT_YN, WORK_FORM_REG_YMD, WORK_FORM_MDFCN_YMD
+		FROM WORK_FORM WHERE CO_CD = #{coCd} and DEPARTMENT_CD IS NULL
+	</select>
+	<select id="getDeptWorkForm" parameterType="String" resultType="kr.or.ddit.company.workform.vo.WorkFormVO">
+		SELECT WORK_FORM_CD, CO_CD, DEPARTMENT_CD, WORK_FORM_GTWK_TM, WORK_FORM_BREAK_BGNG_TM, WORK_FORM_BREAK_END_TM, WORK_FORM_STTS, WORK_FORM_LVRM_TM, WORK_FORM_SUN_YN, WORK_FORM_MON_YN, WORK_FORM_TUE_YN, WORK_FORM_WEB_YN, WORK_FORM_THU_YN, WORK_FORM_FRI_YN, WORK_FORM_SAT_YN, WORK_FORM_REG_YMD, WORK_FORM_MDFCN_YMD
+		FROM WORK_FORM WHERE DEPARTMENT_CD = #{deptCd}
+	</select>
+
+	<delete id="udtBaseWorkForm" parameterType="kr.or.ddit.company.workform.vo.WorkFormVO">
+		UPDATE 
+			WORK_FORM
+		SET 
+			WORK_FORM_GTWK_TM= #{workFormGtwkTm}, 
+			WORK_FORM_BREAK_BGNG_TM= #{workFormBreakBgngTm},
+			WORK_FORM_BREAK_END_TM= #{workFormBreakEndTm},
+			WORK_FORM_LVRM_TM=#{workFormLvrmTm}, 
+			WORK_FORM_SUN_YN=#{workFormSunYn},
+			WORK_FORM_MON_YN=#{workFormMonYn},
+			WORK_FORM_TUE_YN=#{workFormTueYn},
+			WORK_FORM_WEB_YN=#{workFormWebYn},
+			WORK_FORM_THU_YN=#{workFormThuYn},
+			WORK_FORM_FRI_YN=#{workFormFriYn},
+			WORK_FORM_SAT_YN=#{workFormSatYn}, 
+			WORK_FORM_MDFCN_YMD = SYSDATE
+		WHERE CO_CD = #{coCd} AND DEPARTMENT_CD IS NULL
+	</delete>
+	<delete id="udtDeptWorkForm" parameterType="kr.or.ddit.company.workform.vo.WorkFormVO">
+		UPDATE 
+			WORK_FORM
+		SET 
+			WORK_FORM_GTWK_TM= #{workFormGtwkTm}, 
+			WORK_FORM_BREAK_BGNG_TM= #{workFormBreakBgngTm},
+			WORK_FORM_BREAK_END_TM= #{workFormBreakEndTm},
+			WORK_FORM_LVRM_TM=#{workFormLvrmTm}, 
+			WORK_FORM_SUN_YN=#{workFormSunYn},
+			WORK_FORM_MON_YN=#{workFormMonYn},
+			WORK_FORM_TUE_YN=#{workFormTueYn},
+			WORK_FORM_WEB_YN=#{workFormWebYn},
+			WORK_FORM_THU_YN=#{workFormThuYn},
+			WORK_FORM_FRI_YN=#{workFormFriYn},
+			WORK_FORM_SAT_YN=#{workFormSatYn}, 
+			WORK_FORM_MDFCN_YMD = SYSDATE
+		WHERE CO_CD = #{coCd} AND DEPARTMENT_CD = #{departmentCd}
+	</delete>
+	<select id="getWorkFormList" parameterType="kr.or.ddit.comm.security.vo.EmployeeVO" resultType="kr.or.ddit.company.workform.vo.CompanyWorkFormVO">
+		SELECT WORK_FORM_CD, wf.CO_CD, wf.DEPARTMENT_CD, DEPT_NM, WORK_FORM_GTWK_TM, WORK_FORM_BREAK_BGNG_TM, WORK_FORM_BREAK_END_TM, WORK_FORM_STTS, WORK_FORM_LVRM_TM, WORK_FORM_SUN_YN, WORK_FORM_MON_YN, WORK_FORM_TUE_YN, WORK_FORM_WEB_YN, WORK_FORM_THU_YN, WORK_FORM_FRI_YN, WORK_FORM_SAT_YN, WORK_FORM_REG_YMD, WORK_FORM_MDFCN_YMD 
+		FROM WORK_FORM wf LEFT OUTER JOIN DEPARTMENT d 
+		ON wf.DEPARTMENT_CD  = d.DEPT_CD 
+		WHERE WF.CO_CD = #{coCd} ORDER BY wf.DEPARTMENT_CD DESC
+	</select>
+
+	<select id="getTodayWorkStatus" parameterType="kr.or.ddit.comm.paging.vo.PaginationInfoVO" resultType="kr.or.ddit.employee.workStatus.vo.EmpWorkStatusVO" >
+		select b.*
+		from (
+		    select a.*, row_number() over (order by EMP_ID desc) rnum
+		    from (
+				SELECT  e.EMP_ID,e.dept_nm, e.team_nm ,e.emp_nm ,ws.WORK_STTS_CD, ws.WORK_STTS_YMD, 
+					   ws.WORK_BGNG_TM, ws.WORK_END_TM, ws.WORK_TM, ws.WORK_TYPE, 
+					   ws.WORK_REG_DT, ws.WORK_MDFCN_DT, ws.WORK_MDFCN_RSN 
+				FROM
+					(SELECT 
+							e.EMP_ID, e.Emp_nm,e.CO_CD , t.team_nm, DEPT_NM 
+						FROM 
+							EMPLOYEE e, TEAM t, DEPARTMENT dp
+						WHERE 
+							e.TEAM_CD = t.TEAM_CD AND dp.DEPT_CD = e.DEPT_CD 
+						) e LEFT OUTER JOIN (
+						SELECT 
+							ws.WORK_STTS_CD, ws.EMP_ID, ws.WORK_STTS_YMD, ws.WORK_BGNG_TM, ws.WORK_END_TM, ws.WORK_TM, cc.COM_DTL_CD_NM WORK_TYPE, ws.WORK_REG_DT, ws.WORK_MDFCN_DT, ws.WORK_MDFCN_RSN 
+						FROM 
+							WORK_STATUS ws LEFT OUTER JOIN COMMON_DETAIL_CODE cc 
+						ON 
+							ws.WORK_TYPE = cc.COM_DTL_CD
+						WHERE 
+							TO_CHAR(WORK_STTS_YMD, 'yyyy-MM-dd') = TO_CHAR(SYSDATE, 'YYYY-MM-DD')
+						) ws
+				  	ON e.EMP_ID = ws.EMP_ID 
+				  	WHERE e.CO_CD = #{coCd}
+				  	<include refid="todayWorkStatusSearch"/>
+				  	) a
+			    ) b
+			<![CDATA[
+			where b.rnum >= #{startRow} and b.rnum <= #{endRow}
+			]]>
+			order by EMP_ID desc 
+	</select>
+	
+	<select id="getTodayWorkStatustCount" parameterType="kr.or.ddit.comm.paging.vo.PaginationInfoVO" resultType="int">
+		select count(*)
+		    from (
+				SELECT  e.EMP_ID,e.dept_nm, e.team_nm ,e.emp_nm ,ws.WORK_STTS_CD, ws.WORK_STTS_YMD, 
+					   ws.WORK_BGNG_TM, ws.WORK_END_TM, ws.WORK_TM, ws.WORK_TYPE, 
+					   ws.WORK_REG_DT, ws.WORK_MDFCN_DT, ws.WORK_MDFCN_RSN 
+				FROM
+					(SELECT 
+							e.EMP_ID, e.Emp_nm,e.CO_CD , t.team_nm, DEPT_NM 
+						FROM 
+							EMPLOYEE e, TEAM t, DEPARTMENT dp
+						WHERE 
+							e.TEAM_CD = t.TEAM_CD AND dp.DEPT_CD = e.DEPT_CD 
+						) e LEFT OUTER JOIN (
+						SELECT 
+							ws.WORK_STTS_CD, ws.EMP_ID, ws.WORK_STTS_YMD, ws.WORK_BGNG_TM, ws.WORK_END_TM, ws.WORK_TM, cc.COM_DTL_CD_NM WORK_TYPE, ws.WORK_REG_DT, ws.WORK_MDFCN_DT, ws.WORK_MDFCN_RSN 
+						FROM 
+							WORK_STATUS ws LEFT OUTER JOIN COMMON_DETAIL_CODE cc 
+						ON 
+							ws.WORK_TYPE = cc.COM_DTL_CD
+						WHERE 
+							TO_CHAR(WORK_STTS_YMD, 'yyyy-MM-dd') = TO_CHAR(SYSDATE, 'YYYY-MM-DD')
+						) ws
+				  	ON e.EMP_ID = ws.EMP_ID 
+				  	WHERE e.CO_CD = #{coCd}
+				  	<include refid="todayWorkStatusSearch"/>
+				  	)
+	</select>
+	
+	<select id="getEmpTodayWorkStts" resultType="kr.or.ddit.employee.workStatus.vo.EmpWorkStatusVO">
+	
+			SELECT 
+				ws.WORK_STTS_CD, ws.EMP_ID, ws.WORK_STTS_YMD, ws.WORK_BGNG_TM, ws.WORK_END_TM, ws.WORK_TM, ws.WORK_TYPE, ws.WORK_REG_DT, ws.WORK_MDFCN_DT, ws.WORK_MDFCN_RSN 
+			FROM 
+				WORK_STATUS ws 
+			WHERE 
+				TO_CHAR(WORK_STTS_YMD, 'yyyy-MM-dd') = TO_CHAR(SYSDATE, 'YYYY-MM-DD')
+			AND ws.EMP_ID = #{empId}
+	  	
+	</select>
+	
+	<update id="updateEmpTodayWorkStts" parameterType="kr.or.ddit.employee.workStatus.vo.EmpWorkStatusVO">
+		UPDATE WORK_STATUS SET 
+			WORK_BGNG_TM= #{workBgngTm}, WORK_END_TM=#{workEndTm}, WORK_TM=#{workTm}, WORK_TYPE=#{workType}, WORK_MDFCN_DT = SYSDATE, WORK_MDFCN_RSN=#{workMdfcnRsn} 
+		WHERE WORK_STTS_CD= #{workSttsCd}
+	
+	</update>
+
+	<delete id="delEmpTodayWorkStts" parameterType="string">
+		DELETE FROM WORK_STATUS WHERE WORK_STTS_CD=#{wscd}
+	
+	</delete>
+
+	<insert id="setBasicworkForm" parameterType="kr.or.ddit.company.workform.vo.WorkFormVO">
+		<selectKey keyProperty="workFormCd" resultType="string" order="BEFORE">
+			select ('WF'||SEQ_WF_CD.nextval) FROM DUAL
+		</selectKey>
+		INSERT INTO WORK_FORM(
+			WORK_FORM_CD,
+			CO_CD,
+			WORK_FORM_GTWK_TM,
+			WORK_FORM_BREAK_BGNG_TM,
+			WORK_FORM_BREAK_END_TM, 
+			WORK_FORM_LVRM_TM,
+			WORK_FORM_SUN_YN,
+			WORK_FORM_MON_YN,
+			WORK_FORM_TUE_YN, 
+			WORK_FORM_WEB_YN,
+			WORK_FORM_THU_YN, 
+			WORK_FORM_FRI_YN, 
+			WORK_FORM_SAT_YN,
+			WORK_FORM_REG_YMD 
+		)VALUES(
+			#{workFormCd} , 
+			#{coCd},
+			'09:00',
+			'11:30',
+			'12:30',
+			'18:00',
+			'N',
+			'CHECKED',
+			'CHECKED',
+			'CHECKED',
+			'CHECKED',
+			'CHECKED',
+			'N', 
+			SYSDATE 
+		)
+	</insert>
+	
+</mapper>

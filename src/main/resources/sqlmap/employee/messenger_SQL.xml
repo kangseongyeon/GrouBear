@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+  PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+  "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper
+	namespace="kr.or.ddit.employee.messenger.mapper.IMessengerMapper">
+
+	<select id="MessengerMain" resultType="kr.or.ddit.employee.messenger.vo.MessengerVO">
+		select
+			chatmsg_no,
+			emp_id,
+			chatroom_id,
+			atch_file_code,
+			chatmsg_cn,
+			chatmsg_dt
+		from chatmsg
+	</select>
+
+</mapper>

@@ -1,0 +1,236 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+  PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+  "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+  
+  <mapper namespace="kr.or.ddit.employee.vacation.mapper.IEmpVacationMapper">
+ 
+  	
+  	<select id="getVctCrtDetailList" parameterType="kr.or.ddit.comm.paging.vo.PaginationInfoVO" resultType="kr.or.ddit.employee.vacation.vo.VacationCreateDetailVO">
+  	 	select b.*
+		from (
+		    select a.*, row_number() over (order by VCT_CRT_YMD desc) rnum
+		    from (
+				SELECT 
+					vcd.VCT_CRT_DETAIL_CD, vcd.EMP_ID, vcd.VCT_CRT_CNT, TO_CHAR(vcd.VCT_CRT_YMD,'yyyy-MM-dd') VCT_CRT_YMD, emp.EMP_NM, dept.dept_nm, TEAM.TEAM_NM 
+				FROM 
+					VACATION_CREATE_DETAIL vcd, EMPLOYEE emp, DEPARTMENT dept, TEAM team
+				WHERE 
+					vcd.EMP_ID = emp.EMP_ID 
+					AND 
+					emp.DEPT_CD = dept.dept_cd
+					AND
+					team.TEAM_CD = emp.TEAM_CD 
+					AND 
+					vcd.EMP_ID = #{empId}
+					ORDER BY VCT_CRT_YMD DESC
+				) a
+			) b
+		<![CDATA[
+		where b.rnum >= #{startRow} and b.rnum <= #{endRow}
+		]]>
+		
+  	</select>
+  	<select id="getvctcrtDetailListCount" parameterType="kr.or.ddit.comm.paging.vo.PaginationInfoVO" resultType="int">
+  		select count(*) from
+  		VACATION_CREATE_DETAIL where emp_id = #{empId}
+  	</select>
+  	
+  	<select id="getvctAppDetailListCount" parameterType="kr.or.ddit.comm.paging.vo.PaginationInfoVO" resultType="int">
+  		SELECT
+  			count(*) 
+  		FROM 
+  			VACATION_APPLY
+  		WHERE
+  			EMP_ID = #{empId}
+  	
+  	</select>
+  	
+  	 
+  	<select id="getAppDetail" parameterType="kr.or.ddit.comm.paging.vo.PaginationInfoVO" resultType="kr.or.ddit.employee.vacation.vo.VacationApplyVO">
+	 	select b.*
+		from (
+		    select a.*, row_number() over (order by VCT_REG_DT desc) rnum
+		    from (
+		 		SELECT 
+					va.VCT_APLY_CD, EMP_ID, VCT_RSN, TO_CHAR(VCT_BGNG_DT, 'yyyy-MM-dd') VCT_BGNG_DT, TO_CHAR(VCT_END_DT,'yyyy-MM-dd') VCT_END_DT, VCT_USE_DAY_CNT,
+					TO_CHAR(VCT_REG_DT,'yyyy-MM-dd') VCT_REG_DT, VCT_REG_USER, TO_CHAR( VCT_MDFCN_DT,'yyyy-MM-dd')  VCT_MDFCN_DT, VCT_MDFCN_USER, VCT_APLY_APR_STTS, VCT_APLY_APR_REASON,
+					TO_CHAR(VCT_APLY_APR_YMD,'yyyy-MM-dd') VCT_APLY_APR_YMD
+				FROM 
+					VACATION_APPLY va
+				LEFT OUTER JOIN 
+					VACATION_APPLY_APPROVAL vaa 
+				ON 
+					va.VCT_APLY_CD = vaa.VCT_APLY_CD 
+				WHERE
+					EMP_ID = #{empId}
+
+				) a
+		) b
+		<![CDATA[
+		where b.rnum >= #{startRow} and b.rnum <= #{endRow}
+		]]>
+  	</select>
+  	
+  	<select id="getVctCnt" resultType="int">
+  		SELECT 
+			nvl(sum(VCT_CRT_CNT) ,0)
+		FROM 
+			VACATION_CREATE_DETAIL 
+		WHERE 
+			EMP_ID = #{empId} 	
+  	</select>
+  	<select id="getVctApplyCnt" resultType="int">
+  		SELECT 
+			nvl(sum(VCT_USE_DAY_CNT) , 0)
+		FROM 
+			VACATION_APPLY
+		WHERE 
+			EMP_ID = #{empId} 	
+  	</select>
+  	
+  	<select id="getVaSeq" resultType="String">
+  		select SEQ_VA_NO.nextval from dual
+  	</select>
+  	
+  	<insert id="insertVacationApply" parameterType="VacationApplyVO">
+		INSERT INTO VACATION_APPLY (
+			VCT_APLY_CD, EMP_ID, VCT_RSN, VCT_BGNG_DT, VCT_END_DT, VCT_USE_DAY_CNT, VCT_REG_DT, VCT_REG_USER
+		) VALUES(
+			#{vctAplyCd}, #{empId}, #{vctRsn}, #{vctBgngDt}, #{vctEndDt}, ${vctUseDayCnt}, SYSDATE, #{empId})
+  	</insert>
+  	
+  	<insert id="insertVacationApplyApproval" parameterType="VacationApplyApprovalVO">
+ 		<selectKey keyProperty="vctAplyAprCd" resultType="string" order="BEFORE">
+ 			SELECT SEQ_VAA_NO.nextval FROM dual
+ 		</selectKey> 	
+  		INSERT INTO VACATION_APPLY_APPROVAL (
+			VCT_APLY_APR_CD, VCT_APLY_CD, VCT_APLY_APR_ID, VCT_APLY_APR_SEQ, VCT_APLY_APR_STTS
+		) VALUES(
+			#{vctAplyAprCd}, #{vctAplyCd}, #{vctAplyAprId}, #{vctAplyAprSeq}, 'vaa001')
+  		
+  	</insert>
+  	
+  	<select id="getvctAppAprListCount" parameterType="kr.or.ddit.comm.paging.vo.PaginationInfoVO" resultType="int">
+  		SELECT count(*) FROM vacation_apply_approval 
+		WHERE VCT_APLY_APR_ID = #{empId}
+  	</select>
+  	
+  	<select id="getAppAprList" parameterType="kr.or.ddit.comm.paging.vo.PaginationInfoVO" resultType="kr.or.ddit.employee.vacation.vo.VacationApplyVO">
+	  	select b.*
+		from (
+		    select a.*, row_number() over (order by VCT_REG_DT desc) rnum
+		    from (
+		 		SELECT 
+					*
+				FROM 
+					(SELECT 
+						va.VCT_APLY_CD, EMP_ID, VCT_RSN, TO_CHAR(VCT_BGNG_DT, 'yyyy-MM-dd') VCT_BGNG_DT, TO_CHAR(VCT_END_DT,'yyyy-MM-dd') VCT_END_DT, VCT_USE_DAY_CNT,
+						TO_CHAR(VCT_REG_DT,'yyyy-MM-dd') VCT_REG_DT, VCT_REG_USER, TO_CHAR( VCT_MDFCN_DT,'yyyy-MM-dd')  VCT_MDFCN_DT, VCT_MDFCN_USER, VCT_APLY_APR_STTS, VCT_APLY_APR_REASON,
+						TO_CHAR(VCT_APLY_APR_YMD,'yyyy-MM-dd') VCT_APLY_APR_YMD
+					FROM 
+						VACATION_APPLY va
+					LEFT OUTER JOIN 
+						VACATION_APPLY_APPROVAL vaa 
+					ON 
+						va.VCT_APLY_CD = vaa.VCT_APLY_CD 
+					WHERE
+						VCT_APLY_APR_ID = #{empId}) g
+				LEFT OUTER JOIN 
+					(SELECT
+					y.Emp_ID, y.emp_NM, y.DEPT_NM, jbgd.JBGD_NM , y.TEAM_NM
+				FROM
+					(SELECT 
+						z.Emp_ID, z.emp_NM, z.DEPT_NM, z.jbgd_cd, team.TEAM_NM 
+					FROM
+						(SELECT 
+							emp.Emp_ID, emp.emp_nM, emp.team_cd, emp.jbgd_cd, dept.DEPT_NM 
+						FROM 
+							(SELECT 
+								EMP_ID, emp_nM, DEPT_CD, TEAM_CD, JBGD_CD 
+							FROM 
+								EMPLOYEE ) emp
+							LEFT OUTER JOIN
+								DEPARTMENT dept
+							ON emp.dept_cd = DEPT.DEPT_CD ) z
+						LEFT OUTER JOIN 
+							TEAM team
+						ON z.team_cd = team.TEAM_CD) y
+					LEFT OUTER JOIN 
+						JOBGRADE jbgd
+					ON 
+						y.jbgd_cd = jbgd.JBGD_CD 
+				)h
+				ON
+				g.emp_id = h.emp_id
+				) a
+		) b
+		<![CDATA[
+		where b.rnum >= #{startRow} and b.rnum <= #{endRow}
+		]]>
+  	</select>
+  	
+  	<select id="getApprovalInfo" resultType="kr.or.ddit.employee.vacation.vo.VacationApplyVO">
+  		SELECT 
+			*
+		FROM 
+			(SELECT 
+				va.VCT_APLY_CD, EMP_ID, VCT_RSN, TO_CHAR(VCT_BGNG_DT, 'yyyy-MM-dd') VCT_BGNG_DT, TO_CHAR(VCT_END_DT,'yyyy-MM-dd') VCT_END_DT, VCT_USE_DAY_CNT,
+				TO_CHAR(VCT_REG_DT,'yyyy-MM-dd') VCT_REG_DT, VCT_REG_USER, TO_CHAR( VCT_MDFCN_DT,'yyyy-MM-dd')  VCT_MDFCN_DT, VCT_MDFCN_USER, VCT_APLY_APR_STTS, VCT_APLY_APR_REASON,
+				TO_CHAR(VCT_APLY_APR_YMD,'yyyy-MM-dd') VCT_APLY_APR_YMD
+			FROM 
+				VACATION_APPLY va
+			LEFT OUTER JOIN 
+				VACATION_APPLY_APPROVAL vaa 
+			ON 
+				va.VCT_APLY_CD = vaa.VCT_APLY_CD 
+			WHERE
+				va.VCT_APLY_CD = #{vctAplyCd}) g
+		LEFT OUTER JOIN 
+			(SELECT
+				y.Emp_ID, y.emp_NM, y.DEPT_NM, jbgd.JBGD_NM , y.TEAM_NM
+			FROM
+				(SELECT 
+					z.Emp_ID, z.emp_NM, z.DEPT_NM, z.jbgd_cd, team.TEAM_NM 
+				FROM
+					(SELECT 
+						emp.Emp_ID, emp.emp_nM, emp.team_cd, emp.jbgd_cd, dept.DEPT_NM 
+						FROM 
+					(SELECT 
+						EMP_ID, emp_nM, DEPT_CD, TEAM_CD, JBGD_CD 
+					FROM 
+						EMPLOYEE ) emp
+					LEFT OUTER JOIN
+						DEPARTMENT dept
+					ON emp.dept_cd = DEPT.DEPT_CD ) z
+				LEFT OUTER JOIN 
+					TEAM team
+				ON z.team_cd = team.TEAM_CD) y
+			LEFT OUTER JOIN 
+				JOBGRADE jbgd
+			ON 
+				y.jbgd_cd = jbgd.JBGD_CD 
+		)h
+		ON
+		g.emp_id = h.emp_id
+			
+  	</select>
+  	
+  	<update id="aplyapr" parameterType="kr.or.ddit.employee.vacation.vo.VacationApplyApprovalVO">
+  		UPDATE 
+			VACATION_APPLY_APPROVAL 
+		SET 
+			VCT_APLY_APR_STTS= #{vctAplyAprStts}, VCT_APLY_APR_REASON=#{vctAplyAprReason}, 
+			VCT_APLY_APR_YMD= SYSDATE 
+		WHERE VCT_APLY_CD= #{vctAplyAprCd}
+  	</update>
+  	
+  	<select id="getRsn" resultType="string">
+  		select
+  			 VCT_APLY_APR_REASON
+  		from
+  			VACATION_APPLY_APPROVAL
+  		where 
+  			VCT_APLY_CD = #{code}
+  	</select>
+  </mapper>

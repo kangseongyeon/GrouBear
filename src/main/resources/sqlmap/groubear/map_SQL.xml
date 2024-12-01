@@ -1,0 +1,61 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+  PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+  "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="kr.or.ddit.groubear.map.mapper.IMapMapper">
+
+<!-- 	<select id="mapList" resultType="kr.or.ddit.comm.security.vo.CompanyVO"> -->
+<!-- 		select -->
+<!-- 			co_cd, -->
+<!-- 			co_nm, -->
+<!-- 			co_addr -->
+<!-- 		from company -->
+<!-- 		order by co_nm asc -->
+<!-- 	</select> -->
+	
+	<select id="countList" resultType="int" parameterType="kr.or.ddit.comm.paging.vo.PaginationInfoVO">
+  		select count(co_cd)
+		from company
+  	</select>
+	
+	<select id="mapList" parameterType="kr.or.ddit.comm.paging.vo.PaginationInfoVO" resultType="kr.or.ddit.comm.security.vo.CompanyVO">
+  		select
+			b.*
+		from (
+			select 
+				a.*, row_number() over (order by co_cd desc) rnum 
+			from (
+				select
+					co_cd,
+					co_nm,
+					co_addr
+				from company
+				<include refid="mapSearch"/>
+				order by co_cd desc
+			) a
+		) b
+		<![CDATA[
+			where b.rnum >= #{startRow} and b.rnum <= #{endRow}
+		]]>
+  	</select>
+  	
+  	<sql id="mapSearch">
+      <if test="searchWord != null">
+         where (
+         		co_nm like '%' || #{searchWord} || '%' or
+         		co_addr like '%' || #{searchWord} || '%'
+         	)
+      </if>
+   </sql>
+   	
+   	<!-- 소속된 회사의 경도와 위도 좌표 위치 가져오기 -->
+	<select id="comMapSelectOne" parameterType="String" resultType="kr.or.ddit.comm.security.vo.CompanyVO">
+		SELECT c.co_cd, co_nm, co_reg_dt, co_cnt, co_brno, 
+		       ceo_nm, co_zip, co_addr, co_daddr ,co_tel, ceo_id,
+		       lat, lot
+		FROM company c inner join map m on (c.co_cd = m.co_cd)
+		WHERE c.co_cd = #{coCd}
+  	</select>
+
+</mapper>

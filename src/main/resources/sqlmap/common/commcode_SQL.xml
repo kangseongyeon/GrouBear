@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+  PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+  "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+  
+  <mapper namespace="kr.or.ddit.comm.commcode.mapper.ICommCodeMapper">
+  
+  	<select id="commCodeDetailSelectList" resultType="kr.or.ddit.comm.commcode.vo.CommCodeVO">
+		SELECT com_dtl_cd, com_cd, com_dtl_cd_nm, com_dtl_cd_use_yn
+		FROM common_detail_code
+		where com_cd = 'QSTNKND'
+  	</select>
+  	
+  </mapper>

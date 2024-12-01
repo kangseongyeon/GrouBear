@@ -1,0 +1,74 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+  PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+  "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+  
+  <mapper namespace="kr.or.ddit.employee.workStatus.mapper.IEmpWorkStatusMapper">
+  
+ 	
+  
+  
+  
+  
+  	<select id="getTodayWorkStatus" parameterType="kr.or.ddit.comm.security.vo.EmployeeVO" resultType="kr.or.ddit.employee.workStatus.vo.EmpWorkStatusVO">
+	SELECT 
+		WORK_STTS_CD, EMP_ID, WORK_STTS_YMD, WORK_BGNG_TM, WORK_END_TM,
+		WORK_TM, WORK_TYPE, WORK_REG_DT, WORK_MDFCN_DT, WORK_MDFCN_RSN
+	FROM
+		WORK_STATUS
+	WHERE 
+		EMP_ID = #{empId} AND TO_CHAR(WORK_STTS_YMD,'yyyy-MM-dd') = TO_CHAR(SYSDATE,'yyyy-MM-dd')
+
+  	</select>
+  	
+  	<insert id="startWork" parameterType="kr.or.ddit.employee.workStatus.vo.EmpWorkStatusVO">
+		<selectKey keyProperty="workSttsCd" resultType="string" order="BEFORE">
+			select ('ws' || SEQ_WORKSTTS_CD.nextval) from dual		
+		</selectKey>
+		
+		INSERT INTO WORK_STATUS (
+			WORK_STTS_CD, 
+			EMP_ID, 
+			WORK_STTS_YMD,
+			WORK_BGNG_TM,
+			WORK_TYPE,
+			WORK_REG_DT
+ 		) VALUES(
+			#{workSttsCd }, 
+			#{empId },
+			SYSDATE, 
+			#{workBgngTm },
+			#{workType}, 
+			SYSDATE
+		)
+  	</insert>
+  	
+  	
+  	<select id="startWorkChk" parameterType="kr.or.ddit.comm.security.vo.EmployeeVO" resultType="kr.or.ddit.employee.workStatus.vo.EmpWorkStatusVO">
+  		select EMP_ID, WORK_STTS_CD, WORK_BGNG_TM from WORK_STATUS
+  		where EMP_ID = #{empId} AND TO_CHAR(WORK_STTS_YMD,'yyyy-MM-dd') = TO_CHAR(SYSDATE,'yyyy-MM-dd')
+  	
+  	</select>
+  	
+  	
+  	<update id="stopWork" parameterType="kr.or.ddit.employee.workStatus.vo.EmpWorkStatusVO">
+  		UPDATE WORK_STATUS SET 
+  			WORK_END_TM= #{workEndTm},  
+  			WORK_TM=  #{workTm}
+  		WHERE 
+  			EMP_ID = #{empId} AND TO_CHAR(WORK_STTS_YMD,'yyyy-MM-dd') = TO_CHAR(SYSDATE,'yyyy-MM-dd')
+  	
+  	
+  	</update>
+  	
+  	<select id="chkworksttsVO" parameterType="kr.or.ddit.comm.security.vo.EmployeeVO" resultType="int">
+  		SELECT
+			COUNT(*) 
+		FROM 
+			WORK_STATUS
+		WHERE 
+			EMP_ID = #{empId}
+		AND 
+			TO_CHAR(WORK_STTS_YMD, 'yyyy-MM-dd') = TO_CHAR(SYSDATE, 'yyyy-MM-dd')
+  	</select>
+  </mapper>

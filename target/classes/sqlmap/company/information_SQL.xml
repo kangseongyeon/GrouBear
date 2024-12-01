@@ -1,0 +1,483 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+  PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+  "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="kr.or.ddit.company.personnelInformation.mapper.IInformationMapper">
+
+	<resultMap type="DepartmentVO" id="deptMap">
+		<id property="deptCd" column="dept_cd"/>
+		<result property="deptCd" column="dept_cd" />
+		<result property="coCd" column="co_cd" />
+		<result property="deptNm" column="dept_nm" />
+		<result property="deptCrtDt" column="dept_crt_dt" />
+		<result property="deptActvtnYn" column="dept_actvtn_yn" />
+		<result property="deptImgFileUrl" column="dept_img_file_url" />
+		<collection property="teamVO" resultMap="teamMap"></collection>
+	</resultMap>
+
+	<resultMap type="TeamVO" id="teamMap">
+		<id property="teamCd" column="team_cd"/>
+		<result property="teamCd" column="team_cd" />
+		<result property="deptCd" column="dept_cd" />
+		<result property="teamNm" column="team_nm" />
+		<result property="teamCrtDt" column="team_crt_dt" />
+		<result property="teamActvtnYn" column="team_actvtn_yn" />
+	</resultMap>
+	
+	<select id="completedProject" resultType="kr.or.ddit.company.personnelInformation.vo.TeamDetailVO">
+	SELECT 
+	    E.END_CNT AS END_CNT,
+	    I.ING_CNT AS ING_CNT
+	FROM 
+	    (SELECT COUNT(*) AS END_CNT
+	     FROM (
+	         SELECT 
+	             P.PRO_NO 
+	         FROM 
+	             PROJECT P
+	             JOIN EMPLOYEE E ON P.EMP_ID = E.EMP_ID
+	             JOIN TEAM T ON E.TEAM_CD = T.TEAM_CD
+	         WHERE 
+	             T.TEAM_CD = #{teamCd}
+	             <![CDATA[
+				AND P.PRO_END_DT < SYSDATE
+				]]>
+	     )
+	    ) E,
+	    (SELECT COUNT(*) AS ING_CNT
+	     FROM (
+	         SELECT 
+	             P.PRO_NO 
+	         FROM 
+	             PROJECT P
+	             JOIN EMPLOYEE E ON P.EMP_ID = E.EMP_ID
+	             JOIN TEAM T ON E.TEAM_CD = T.TEAM_CD
+	         WHERE 
+	             T.TEAM_CD = #{teamCd}
+	     )
+	    ) I
+	
+	</select>
+	
+	<select id="todayVacationSelect" resultType="kr.or.ddit.comm.empallinfo.vo.EmployeeAllVO">
+		SELECT 
+		    E.IMG_FILE_URL AS IMG_FILE_URL,
+		    E.EMP_NM AS EMP_NM
+		FROM
+		    EMPLOYEE E,
+		    VACATION_APPLY VA,
+		    TEAM T
+		WHERE
+		    E.TEAM_CD = T.TEAM_CD
+		    AND E.EMP_ID = VA.EMP_ID
+		    AND T.TEAM_CD = #{teamCd}
+		    <![CDATA[
+				AND VA.VCT_BGNG_DT <= TRUNC(SYSDATE)
+		  		AND VA.VCT_END_DT >= TRUNC(SYSDATE)
+		    ]]>
+	</select>
+	
+	
+	<select id="selectTeamProjectList" resultType="ProjectVO">
+		SELECT 
+		    P.PRO_NO AS PRO_NO, 
+		    P.CO_CD AS CO_CD ,
+		    P.EMP_ID AS EMP_ID,
+		    P.PRO_STTS_CD  AS PRO_STTS_CD,
+		    P.PRO_NM AS PRO_NM,
+		    P.PRO_CN AS PRO_CN,
+		    P.PRO_BGNG_DT AS PRO_BGNG_DT,
+		    P.PRO_MDFCN_DT AS PRO_MDFCN_DT,
+		    P.PRO_END_DT AS PRO_END_DT,
+		    P.PRO_PREGRT AS PRO_PREGRT,
+		    P.PRO_DEL_YN AS PRO_DEL_YN,
+		    P.PRO_START_DT AS PRO_START_DT
+		FROM PROJECT P,
+		     TEAM T,
+		     EMPLOYEE E
+		WHERE P.EMP_ID = E.EMP_ID AND E.TEAM_CD = T.TEAM_CD AND T.TEAM_CD = #{teamCd}
+	
+	</select>
+	
+	
+	<select id="selectEmpTeam" resultType="kr.or.ddit.comm.empallinfo.vo.EmployeeAllVO">
+		SELECT E.EMP_ID AS EMP_ID, E.CO_CD AS CO_CD, E.DEPT_CD AS DEPT_CD, E.EMP_EML_ADDR AS EMP_EML_ADDR, E.EMP_NM AS EMP_NM, E.EMP_NO AS EMP_NO, E.EMP_ZIP AS EMP_ZIP, 
+		       E.EMP_ADDR AS EMP_ADDR, E.EMP_DADDR AS EMP_DADDR, E.EMP_TELNO AS EMP_TELNO, E.EMP_BRDT AS EMP_BRDT, EMP_GNDR AS EMP_GNDR, E.EMP_NTN AS EMP_NTN, E.EMP_JNCMP_YMD AS EMP_JNCMP_YMD, 
+		       E.EMP_RSGNTN_YMD AS EMP_RSGNTN, E.EMP_CRT_YMD AS EMP_CRT_YMD, E.EMP_MDFCN_YMD AS EMP_MDFCN_YMD, E.ENABLED, E.EMP_DLN_YN, E.IMG_FILE_URL, E.EMP_DEL_YN,
+		       E.TEAM_CD, C.CO_NM, C.CO_REG_DT, C.CO_CNT, C.CO_BRNO, C.CO_ZIP, C.CO_ADDR, C.CO_DADDR, C.CO_TEL, C.CEO_NM,
+		       D.DEPT_NM AS DETP_NM, D.DEPT_CRT_DT AS DEPT_CRT_DT, DEPT_ACTVTN_YN, D.DEPT_IMG_FILE_URL, T.TEAM_NM AS TEAM_NM, T.TEAM_CRT_DT, T.TEAM_ACTVTN_YN,
+		       E.JBGD_CD AS JBGD_CD, J.JBGD_NM AS JBGD_NM
+		FROM 
+		    EMPLOYEE E
+		LEFT JOIN 
+		    COMPANY C ON E.CO_CD = C.CO_CD
+		LEFT JOIN 
+		    DEPARTMENT D ON E.DEPT_CD = D.DEPT_CD
+		LEFT JOIN 
+		    TEAM T ON E.TEAM_CD = T.TEAM_CD
+		LEFT JOIN 
+		    JOBGRADE J ON E.JBGD_CD = J.JBGD_CD
+		WHERE 
+		    E.TEAM_CD = #{teamCd}
+	</select>
+	
+	<select id="selectDetailTeam" resultType="kr.or.ddit.company.personnelInformation.vo.TeamVO">
+		SELECT
+			T.TEAM_CD, T.TEAM_NM, T.DEPT_CD, D.DEPT_NM AS DEPT_NM,
+			T.TEAM_CRT_DT, T.TEAM_ACTVTN_YN, COUNT(E.TEAM_CD) AS EMP_CNT
+    	FROM 
+    		TEAM T, EMPLOYEE E, DEPARTMENT D
+	    WHERE 
+	    	T.TEAM_CD = #{teamCd} AND T.TEAM_CD = E.TEAM_CD AND D.DEPT_CD = T.DEPT_CD
+	    GROUP BY
+		    T.TEAM_CD, T.TEAM_NM, T.DEPT_CD, DEPT_NM, T.TEAM_CRT_DT, T.TEAM_ACTVTN_YN
+	</select>
+	
+	<select id="empIdChk" resultType="kr.or.ddit.comm.security.vo.EmployeeVO">
+		SELECT EMP_ID
+		FROM EMPLOYEE
+		WHERE EMP_ID = #{empId}
+	</select>
+	
+	<select id="deptNmChk" resultType="kr.or.ddit.company.personnelInformation.vo.DepartmentVO">
+		SELECT DEPT_NM
+		FROM DEPARTMENT
+		WHERE CO_CD = #{coCd} AND DEPT_NM = #{deptNm} AND DEPT_ACTVTN_YN = 'Y'
+	</select>
+	
+	<update id="deptModifyNm" parameterType="kr.or.ddit.company.personnelInformation.vo.DepartmentVO">
+		UPDATE DEPARTMENT
+  		SET
+	  		DEPT_NM = #{deptNm}
+  		WHERE DEPT_CD = #{deptCd}
+	</update>
+	<update id="delDept" parameterType="kr.or.ddit.company.personnelInformation.vo.DepartmentVO">
+		UPDATE DEPARTMENT
+  		SET
+	  		DEPT_ACTVTN_YN = 'N'
+  		WHERE DEPT_CD = #{deptCd}
+	</update>
+	
+	<update id="delTeam" parameterType="kr.or.ddit.company.personnelInformation.vo.TeamVO">
+		UPDATE TEAM
+  		SET
+	  		TEAM_ACTVTN_YN = 'N'
+  		WHERE TEAM_CD = #{teamCd}
+	</update>
+	
+	
+  	<sql id="infoSort">
+  		<if test="searchOrder != null">
+	        <if test="searchOrder == 'recent'">
+	            ORDER BY a.EMP_MDFCN_YMD DESC, a.EMP_DEL_YN ASC
+	        </if>
+	        <if test="searchOrder == 'empNm'">
+	            ORDER BY a.EMP_NM ASC, a.EMP_DEL_YN ASC
+	        </if>
+	        <if test="searchOrder =='empNo'">
+	            ORDER BY a.EMP_NO ASC, a.EMP_DEL_YN ASC
+	        </if>
+	        <if test="searchOrder == 'jbgdCd'">
+	            ORDER BY a.EJBGD_CD ASC, a.EMP_DEL_YN ASC
+	        </if>
+	    </if>
+  		<if test="searchOrder == null">
+			ORDER BY a.EMP_MDFCN_YMD ASC, a.EMP_DEL_YN ASC
+	    </if>
+  	</sql>
+	<sql id="infoSearch">
+  		<if test="searchWord != null">
+  			and (
+         		e.emp_nm like '%' || #{searchWord} || '%' or
+         		e.emp_telno like '%' || #{searchWord} || '%' or
+         		e.emp_no like '%' || #{searchWord} || '%' or
+         		d.dept_nm like '%' || #{searchWord} || '%' or
+         		j.jbgd_nm like '%' || #{searchWord} || '%' or
+         		t.team_nm like '%' || #{searchWord} || '%' 
+         	)
+  		</if>
+  	</sql>
+  
+  	<select id="selectEmpPage" parameterType="kr.or.ddit.comm.paging.vo.PaginationInfoVO" resultType="int">
+  		SELECT COUNT (*) total_count
+		FROM (
+		    SELECT
+                E.EMP_ID AS EMP_ID, E.CO_CD, D.DEPT_NM AS DEPT_CD, E.JBGD_CD AS EJBGD_CD, J.JBGD_NM AS JBGD_CD, T.TEAM_NM AS TEAM_CD, E.EMP_PW, E.EMP_EML_ADDR, E.EMP_NM AS EMP_NM,
+			    E.EMP_NO, E.EMP_ZIP, E.EMP_ADDR, E.EMP_DADDR, E.EMP_TELNO, E.EMP_BRDT, E.EMP_GNDR,
+			    E.EMP_NTN, E.EMP_JNCMP_YMD, E.EMP_RSGNTN_YMD, E.EMP_CRT_YMD, E.EMP_MDFCN_YMD,
+			    E.EMP_DEL_YN, E.EMP_APRV_YN, E.ENABLED, E.EMP_DLN_YN, E.IMG_FILE_URL
+            FROM
+                EMPLOYEE E, DEPARTMENT D, JOBGRADE J, TEAM T
+            WHERE
+                E.CO_CD = #{coCd} 
+                AND E.DEPT_CD = D.DEPT_CD 
+                AND E.JBGD_CD = J.JBGD_CD 
+                AND E.TEAM_CD = T.TEAM_CD 
+				<include refid="infoSearch"/>
+		)
+  	</select>
+  	
+  	<select id="selectEmpPaging" parameterType="kr.or.ddit.comm.paging.vo.PaginationInfoVO" resultType="kr.or.ddit.comm.empallinfo.vo.EmployeeAllVO">
+  		SELECT
+		    b.*
+		FROM (
+		    SELECT
+		        a.*, row_number() over (<include refid="infoSort"/>) rnum 
+		    FROM (
+            SELECT
+                E.EMP_ID AS EMP_ID, E.CO_CD, D.DEPT_NM AS DEPT_CD, E.JBGD_CD AS EJBGD_CD, J.JBGD_NM AS JBGD_CD, T.TEAM_NM AS TEAM_CD, E.EMP_PW, E.EMP_EML_ADDR, E.EMP_NM AS EMP_NM,
+			    E.EMP_NO, E.EMP_ZIP, E.EMP_ADDR, E.EMP_DADDR, E.EMP_TELNO, E.EMP_BRDT, E.EMP_GNDR,
+			    E.EMP_NTN, E.EMP_JNCMP_YMD, E.EMP_RSGNTN_YMD, E.EMP_CRT_YMD, E.EMP_MDFCN_YMD,
+			    E.EMP_DEL_YN, E.EMP_APRV_YN, E.ENABLED, E.EMP_DLN_YN, E.IMG_FILE_URL
+            FROM
+                EMPLOYEE E, DEPARTMENT D, JOBGRADE J, TEAM T
+            WHERE
+                E.CO_CD = #{coCd} 
+                AND E.DEPT_CD = D.DEPT_CD
+                AND E.JBGD_CD = J.JBGD_CD
+                AND E.TEAM_CD = T.TEAM_CD 
+		        <include refid="infoSearch"/>
+		    ) a
+		) b
+		<![CDATA[
+			WHERE b.rnum >= #{startRow} and b.rnum <= #{endRow}
+		]]>
+  	</select>
+	
+	<select id="getSidebar" resultType="kr.or.ddit.company.personnelInformation.vo.DepartmentMenuVO">
+		SELECT 
+			DEPT_CD, MENU_NO
+		FROM DEPARTMENT_MENU
+		WHERE DEPT_CD = #{deptCd}
+	</select>
+	
+	
+	<select id="getMenu" resultType="kr.or.ddit.company.personnelInformation.vo.MenuVO">
+		SELECT MENU_NO, MENU_NM, MENU_ICON, MENU_PREMIUM
+		FROM MENU
+		WHERE MENU_NO = #{menuNo}
+	</select>
+	
+	<select id="recentlyDept" resultType="String">
+		SELECT DEPT_CD
+		FROM (
+		    SELECT DEPT_CD
+		    FROM DEPARTMENT
+		    ORDER BY DEPT_CRT_DT DESC
+		)
+		WHERE ROWNUM = 1
+	</select>
+	
+	<select id="getAddrEmployee" parameterType="String" resultType="kr.or.ddit.comm.security.vo.EmployeeVO">
+		SELECT EMP_ID, EMP_NM, EMP_NO, EMP_EML_ADDR
+		FROM EMPLOYEE
+		WHERE TEAM_CD = #{teamCd} AND EMP_DEL_YN = 'N'
+		ORDER BY EMP_ID ASC, EMP_NM ASC
+	</select>
+	
+	
+	<update id="empDelete" parameterType="kr.or.ddit.comm.security.vo.EmployeeVO">
+		UPDATE EMPLOYEE
+  		SET
+  			EMP_RSGNTN_YMD = SYSDATE,
+	  		EMP_DEL_YN = 'Y'
+  		WHERE EMP_ID = #{empId}
+	</update>
+
+
+	<select id="selectTeamList" parameterType="String" resultType="kr.or.ddit.company.personnelInformation.vo.TeamVO">
+		SELECT TEAM_CD, TEAM_NM
+		FROM TEAM
+	</select>
+	
+	<select id="selectTeamListByDept" parameterType="String" resultType="kr.or.ddit.company.personnelInformation.vo.TeamVO">
+	    SELECT team_cd, team_nm
+	    FROM team
+	    WHERE dept_cd = #{deptCd}
+	</select>
+	
+	<select id="getTeamsByDept" parameterType="String" resultType="kr.or.ddit.company.personnelInformation.vo.TeamVO">
+	    SELECT TEAM_CD, TEAM_NM
+	    FROM TEAM
+	    WHERE DEPT_CD = #{deptCd}
+	</select>
+
+	<select id="selectJBGDList" parameterType="kr.or.ddit.comm.security.vo.EmployeeVO" resultType="kr.or.ddit.company.personnelInformation.vo.JobGradeVO">
+		SELECT JBGD_CD, JBGD_NM 
+	    FROM JOBGRADE
+	    WHERE CO_CD = #{coCd}
+	</select>
+	
+	<select id="selectEmployee" parameterType="String" resultType="kr.or.ddit.comm.security.vo.EmployeeVO">
+		SELECT  E.EMP_ID AS EMP_ID, E.CO_CD, E.DEPT_CD AS EDEPT_CD, D.DEPT_NM AS DEPT_CD, E.JBGD_CD AS EJBGD_CD, J.JBGD_NM AS JBGD_CD,
+				E.TEAM_CD AS ETEAM_CD, T.TEAM_NM AS TEAM_CD, E.EMP_PW, E.EMP_EML_ADDR, E.EMP_NM AS EMP_NM,
+			    E.EMP_NO, E.EMP_ZIP, E.EMP_ADDR, E.EMP_DADDR, E.EMP_TELNO, E.EMP_BRDT, E.EMP_GNDR,
+			    E.EMP_NTN, E.EMP_JNCMP_YMD, E.EMP_RSGNTN_YMD, E.EMP_CRT_YMD, E.EMP_MDFCN_YMD,
+			    E.EMP_DEL_YN, E.EMP_APRV_YN, E.ENABLED, E.EMP_DLN_YN, E.IMG_FILE_URL
+		FROM
+		    EMPLOYEE E, DEPARTMENT D, JOBGRADE J, TEAM T
+		WHERE
+			EMP_ID = #{empId} AND E.DEPT_CD = D.DEPT_CD AND E.JBGD_CD = J.JBGD_CD AND E.TEAM_CD = T.TEAM_CD 
+	</select>
+
+	<select id="comAllEmpList" parameterType="String" resultType="kr.or.ddit.comm.security.vo.EmployeeVO">
+			SELECT E.EMP_NM AS EMP_NM, E.EMP_NO, E.JBGD_CD AS EJBGD_CD, D.DEPT_NM AS DEPTCD, J.JBGD_NM AS JBGDCD, E.EMP_JNCMP_YMD, 
+  				E.EMP_TELNO, E.IMG_FILE_URL, E.EMP_ID AS EMP_ID, E.EMP_EML_ADDR
+	  		FROM 
+	  			EMPLOYEE E, DEPARTMENT D, JOBGRADE J
+	  		WHERE 
+	  			E.CO_CD = #{coCd} AND E.DEPT_CD = D.DEPT_CD AND E.JBGD_CD = J.JBGD_CD AND E.EMP_DEL_YN = 'N'
+	  		ORDER BY J.JBGD_AUTH_PRORD ASC
+  	</select>
+  	
+	<select id="orgEmpList" parameterType="String" resultType="kr.or.ddit.comm.security.vo.EmployeeVO">
+		SELECT E.EMP_NM AS EMP_NM, E.EMP_NO, E.JBGD_CD AS EJBGD_CD, D.DEPT_NM AS DEPTCD, J.JBGD_NM AS JBGDCD, E.EMP_JNCMP_YMD, 
+  				E.EMP_TELNO, E.IMG_FILE_URL, E.EMP_ID AS EMP_ID, E.EMP_EML_ADDR, J.JBGD_AUTH_PRORD
+  		FROM EMPLOYEE E, DEPARTMENT D, JOBGRADE J
+  		WHERE E.CO_CD = #{coCd} AND E.DEPT_CD = D.DEPT_CD AND E.JBGD_CD = J.JBGD_CD AND E.EMP_DEL_YN = 'N'
+  		ORDER BY J.JBGD_AUTH_PRORD ASC, EMP_NM ASC
+  	</select>
+  	
+	<select id="selectDeptList" parameterType="kr.or.ddit.comm.security.vo.EmployeeVO" resultType="kr.or.ddit.company.personnelInformation.vo.DepartmentVO">
+  		SELECT DEPT_CD, DEPT_NM
+  		FROM DEPARTMENT
+  		WHERE CO_CD = #{coCd} AND DEPT_ACTVTN_YN = 'Y'
+  		ORDER BY DEPT_NM ASC
+  	</select>
+  	
+	<select id="selectDeptTeamList" parameterType="String" resultMap="deptMap">
+  		 SELECT D.DEPT_CD, D.DEPT_NM, T.TEAM_CD, T.TEAM_NM, J.JBGD_AUTH_PRORD
+  		FROM DEPARTMENT D, TEAM T, JOBGRADE J
+  		WHERE 
+  			D.CO_CD = #{coCd} AND D.DEPT_CD = T.DEPT_CD
+  			AND D.DEPT_ACTVTN_YN = 'Y'
+  			AND J.CO_CD = D.CO_CD
+  		ORDER BY J.JBGD_AUTH_PRORD ASC, D.DEPT_NM ASC, T.TEAM_NM ASC
+  	</select>
+  	
+  	<select id="comAllMenuList" resultType="kr.or.ddit.company.personnelInformation.vo.MenuVO">
+  		SELECT MENU_NM, MENU_NO, MENU_ICON
+  		FROM MENU
+  		ORDER BY MENU_NM ASC
+  	</select>
+  	
+  	<select id="comAllDeptList" parameterType="String" resultMap="deptMap">
+  		SELECT 
+	    D.DEPT_CD, DEPT_NM, DEPT_CRT_DT, DEPT_ACTVTN_YN, DEPT_IMG_FILE_URL,
+	    TEAM_CD, TEAM_NM, TEAM_CRT_DT, TEAM_ACTVTN_YN
+		FROM DEPARTMENT D LEFT OUTER JOIN TEAM T ON(D.DEPT_CD = T.DEPT_CD)
+		WHERE CO_CD = #{coCd} AND DEPT_ACTVTN_YN = 'Y'
+		ORDER BY DEPT_NM ASC
+  	</select>
+  	
+  	<update id="empInfoModify" parameterType="kr.or.ddit.comm.security.vo.EmployeeVO">
+  		UPDATE EMPLOYEE
+  		SET
+  			IMG_FILE_URL = #{imgFileUrl},
+	  		EMP_NM = #{empNm},
+	  		EMP_JNCMP_YMD = #{empJncmpYmd},
+	  		EMP_BRDT = #{empBrdt},
+	  		EMP_GNDR = #{empGndr},
+	  		EMP_NO = #{empNo},
+	  		DEPT_CD = #{deptCd},
+	  		TEAM_CD = #{teamCd},
+	  		JBGD_CD = #{jbgdCd},
+	  		EMP_NTN = #{empNtn},
+	  		EMP_ZIP = #{empZip},
+	  		EMP_ADDR = #{empAddr},
+	  		EMP_DADDR = #{empDaddr},
+	  		EMP_TELNO = #{empTelno},
+	  		EMP_EML_ADDR = #{empEmlAddr}
+  		WHERE EMP_ID = #{empId}
+  	</update>
+  	
+  	<insert id="insertTeam" parameterType="kr.or.ddit.company.personnelInformation.vo.TeamVO">
+  		<selectKey keyProperty="teamCd" resultType="string" order="BEFORE">
+	        SELECT CONCAT(#{deptCd}, SEQ_TEAM_CD.NEXTVAL) FROM DUAL
+	    </selectKey>
+  		INSERT INTO TEAM(
+  			TEAM_CD,
+  			DEPT_CD,
+  			TEAM_NM,
+  			TEAM_CRT_DT,
+  			TEAM_ACTVTN_YN
+  		) VALUES (
+  			#{teamCd}, #{deptCd}, #{teamNm}, SYSDATE, 'Y'
+  		)
+  	</insert>
+  	
+  	<insert id="insertModalTeam" parameterType="kr.or.ddit.company.personnelInformation.vo.TeamVO">
+  		<selectKey keyProperty="teamCd" resultType="string" order="BEFORE">
+	        SELECT CONCAT(#{deptCd}, SEQ_TEAM_CD.NEXTVAL) FROM DUAL
+	    </selectKey>
+  		INSERT INTO TEAM(
+  			TEAM_CD,
+  			DEPT_CD,
+  			TEAM_NM,
+  			TEAM_CRT_DT,
+  			TEAM_ACTVTN_YN
+  		) VALUES (
+  			#{teamCd}, #{deptCd}, #{teamNm}, SYSDATE, 'Y'
+  		)
+  	</insert>
+  	
+  	<insert id="insertMenu" parameterType="kr.or.ddit.company.personnelInformation.vo.DepartmentMenuVO">
+  		INSERT INTO DEPARTMENT_MENU(
+  			DEPT_CD,
+  			MENU_NO
+  		) VALUES (
+  			#{deptCd},
+  			#{menuNo}
+  		)
+  	</insert>
+  	
+  	
+  	<insert id="insertEmployee" parameterType="kr.or.ddit.comm.security.vo.EmployeeVO">
+  		INSERT INTO EMPLOYEE (
+		    IMG_FILE_URL,
+		    EMP_ID,
+	        CO_CD,
+	        DEPT_CD,
+	        TEAM_CD,
+	        JBGD_CD,
+	        EMP_PW,
+	        EMP_NM,
+	        EMP_NO,
+	        EMP_TELNO,
+	        EMP_JNCMP_YMD,
+	        EMP_CRT_YMD,
+	        EMP_MDFCN_YMD,
+	        EMP_GNDR,
+	        EMP_DEL_YN,
+	        EMP_APRV_YN,
+	        ENABLED
+		) VALUES (
+		    #{imgFileUrl}, #{empId}, #{coCd}, #{deptCd}, #{teamCd}, #{jbgdCd}, #{empPw}, #{empNm}, 
+        	#{empNo}, #{empTelno}, #{empJncmpYmd}, SYSDATE, SYSDATE, #{empGndr}, 'N', 'Y', 1
+		)
+  	</insert>
+  	
+	<insert id="insertDepartment" parameterType="kr.or.ddit.company.personnelInformation.vo.DepartmentVO">
+	    <selectKey keyProperty="deptCd" resultType="string" order="BEFORE">
+	        SELECT CONCAT(#{coCd}, SEQ_DEPT_CD.NEXTVAL) FROM DUAL
+	    </selectKey>
+	    INSERT INTO department (
+	        DEPT_IMG_FILE_URL,
+	        DEPT_CD,
+	        CO_CD,
+	        DEPT_NM,
+	        DEPT_CRT_DT,
+	        DEPT_ACTVTN_YN
+	    ) VALUES (
+	        #{deptImgFileUrl},
+	        #{deptCd},
+	        #{coCd},
+	        #{deptNm},
+	        SYSDATE,
+	        'Y'
+	    )
+	</insert>
+
+
+	
+  </mapper>

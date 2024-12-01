@@ -1,0 +1,207 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+  PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+  "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="kr.or.ddit.groubear.stats.mapper.IStatsMapper">
+
+	<sql id="statsSearch">
+      <if test="searchWord != null">
+         and (
+         		co_nm like '%' || #{searchWord} || '%' or
+         		co_brno like '%' || #{searchWord} || '%'
+         	)
+      </if>
+   </sql>
+
+	<select id="getMonthlyData"
+		resultType="kr.or.ddit.groubear.stats.vo.StatsVO">
+		SELECT
+		TO_CHAR(RGL_STLM_BGNG_YMD, 'YYYY-MM') AS month,
+		SUM(RGL_STLM_PRC) AS total_payment
+		FROM
+		REGULAR_SETTLEMENT
+		GROUP BY
+		TO_CHAR(RGL_STLM_BGNG_YMD, 'YYYY-MM')
+		ORDER BY
+		TO_CHAR(RGL_STLM_BGNG_YMD, 'YYYY-MM') ASC
+	</select>
+
+	<select id="getYearlyData"
+		resultType="kr.or.ddit.groubear.stats.vo.StatsVO">
+		SELECT
+		TO_CHAR(RGL_STLM_BGNG_YMD, 'YYYY') AS year,
+		SUM(RGL_STLM_PRC) AS total_payment
+		FROM
+		REGULAR_SETTLEMENT
+		GROUP BY
+		TO_CHAR(RGL_STLM_BGNG_YMD, 'YYYY')
+		ORDER BY
+		TO_CHAR(RGL_STLM_BGNG_YMD, 'YYYY') ASC
+	</select>
+
+	<select id="getMothlyEmp"
+		resultType="kr.or.ddit.groubear.stats.vo.StatsVO">
+		SELECT
+		TO_CHAR(EMP_JNCMP_YMD, 'YYYY-MM') AS join_month,
+		COUNT(*) AS employee_count
+		FROM
+		EMPLOYEE
+		GROUP BY
+		TO_CHAR(EMP_JNCMP_YMD, 'YYYY-MM')
+		ORDER BY
+		TO_CHAR(EMP_JNCMP_YMD, 'YYYY-MM') ASC
+	</select>
+
+	<select id="getYearlyEmp"
+		resultType="kr.or.ddit.groubear.stats.vo.StatsVO">
+		SELECT
+		TO_CHAR(EMP_JNCMP_YMD, 'YYYY') AS join_year,
+		COUNT(*) AS employee_count
+		FROM
+		EMPLOYEE
+		GROUP BY
+		TO_CHAR(EMP_JNCMP_YMD, 'YYYY')
+		ORDER BY
+		TO_CHAR(EMP_JNCMP_YMD, 'YYYY') ASC
+	</select>
+	
+	<select id="getMothlyCom"
+		resultType="kr.or.ddit.groubear.stats.vo.StatsVO">
+		SELECT
+		TO_CHAR(CO_REG_DT, 'YYYY-MM') AS com_month,
+		COUNT(*) AS company_count
+		FROM
+		COMPANY
+		GROUP BY
+		TO_CHAR(CO_REG_DT, 'YYYY-MM')
+		ORDER BY
+		TO_CHAR(CO_REG_DT, 'YYYY-MM') ASC
+	</select>
+
+	<select id="getYearlyCom"
+		resultType="kr.or.ddit.groubear.stats.vo.StatsVO">
+		SELECT
+		TO_CHAR(CO_REG_DT, 'YYYY') AS com_year,
+		COUNT(*) AS company_count
+		FROM
+		COMPANY
+		GROUP BY
+		TO_CHAR(CO_REG_DT, 'YYYY')
+		ORDER BY
+		TO_CHAR(CO_REG_DT, 'YYYY') ASC
+	</select>
+	
+	<select id="selectCocd" parameterType="kr.or.ddit.comm.paging.vo.PaginationInfoVO" resultType="int">
+	select count(co_cd)
+	from company
+	where 1=1
+	<include refid="statsSearch"/>
+	</select>
+
+	<select id="getComInfo"
+		parameterType="kr.or.ddit.comm.paging.vo.PaginationInfoVO"
+		resultType="kr.or.ddit.groubear.stats.vo.StatsVO">
+	SELECT
+		b.*
+			FROM (
+				SELECT
+					a.*, ROW_NUMBER() OVER (ORDER BY a.CO_CD DESC) AS rnum
+				FROM (
+					SELECT c.CO_NM, c.CO_CD, c.co_brno,
+						MAX(c.CO_CNT) AS coCnT,
+						COUNT(e.EMP_ID) AS empCnt
+					FROM company c
+				LEFT JOIN employee e ON c.CO_CD = e.CO_CD
+				where 1=1 
+				<include refid="statsSearch"/>
+				GROUP BY c.CO_NM, c.CO_CD, c.co_brno
+					) a
+			) b
+		<![CDATA[
+           where b.rnum >= #{startRow} and b.rnum <= #{endRow}
+           ]]>
+	</select>
+	
+	<select id="comDetail" resultType="kr.or.ddit.groubear.stats.vo.StatsVO">
+	select *
+    from company
+    where co_cd = #{coCd}
+	</select>
+	
+	<select id="comOfEmp" parameterType="kr.or.ddit.groubear.stats.vo.StatsVO"
+	resultType="kr.or.ddit.groubear.stats.vo.StatsVO">
+	SELECT
+	TO_CHAR(E.EMP_JNCMP_YMD, 'YYYY-MM') AS categories,
+	COUNT(*) AS chartData,
+	C.co_nm
+	FROM
+	EMPLOYEE E
+	JOIN
+	COMPANY C ON E.co_cd = C.co_cd
+	WHERE
+	E.co_cd = #{coCd}
+	GROUP BY
+	TO_CHAR(E.EMP_JNCMP_YMD, 'YYYY-MM'), C.co_nm
+	ORDER BY
+	TO_CHAR(E.EMP_JNCMP_YMD, 'YYYY-MM') ASC
+	</select>
+	
+	<select id="getnumOfMem" resultType="kr.or.ddit.groubear.stats.vo.StatsVO">
+	SELECT
+	count(*) AS "totalPeople",
+	<![CDATA[
+	SUM(CASE WHEN RGL_STLM_NOPE <= 50 THEN 1 ELSE 0 END) AS "fiftyPeople",
+    SUM(CASE WHEN RGL_STLM_NOPE BETWEEN 51 AND 100 THEN 1 ELSE 0 END) AS "hundredPeople",
+    SUM(CASE WHEN RGL_STLM_NOPE BETWEEN 101 AND 150 THEN 1 ELSE 0 END) AS "hundredPeopleHalf",
+    SUM(CASE WHEN RGL_STLM_NOPE BETWEEN 151 AND 200 THEN 1 ELSE 0 END) AS "twoHundredPeople",
+    SUM(CASE WHEN RGL_STLM_NOPE > 200 THEN 1 ELSE 0 END) AS "twoHundredPeopleHalf"
+	]]>
+	FROM
+	REGULAR_SETTLEMENT
+	</select>
+	
+	<select id="getpremium" resultType="kr.or.ddit.groubear.stats.vo.StatsVO">
+	SELECT
+	count(*) AS "totalPremium",
+	SUM(CASE WHEN premium_yn = 'Y' THEN 1 ELSE 0 END) AS premium,
+	SUM(CASE WHEN premium_yn = 'N' THEN 1 ELSE 0 END) AS normal
+	FROM
+	contract
+	</select>
+	
+	<select id="getnumOfMon" resultType="kr.or.ddit.groubear.stats.vo.StatsVO">
+	SELECT
+	count(*) AS "totalPre",
+	<![CDATA[
+	SUM(CASE WHEN ctrt_pre <= 3 THEN 1 ELSE 0 END) AS "threeMon",
+	SUM(CASE WHEN ctrt_pre BETWEEN 4 AND 6 THEN 1 ELSE 0 END) AS "sixMon",
+	SUM(CASE WHEN ctrt_pre BETWEEN 7 AND 12 THEN 1 ELSE 0 END) AS "oneYear",
+	SUM(CASE WHEN ctrt_pre BETWEEN 13 AND 24 THEN 1 ELSE 0 END) AS "twoYear",
+	SUM(CASE WHEN ctrt_pre >= 25 THEN 1 ELSE 0 END) AS "overYear"
+	FROM
+	]]>
+	contract
+	</select>
+	
+	<select id="getCountInfo" resultType="kr.or.ddit.groubear.stats.vo.StatsVO">
+	SELECT 'EmpCount' AS name, COUNT(emp_id) AS count
+	FROM employee
+
+	UNION ALL
+
+	SELECT 'LogCount' AS name, COUNT(log_co_cd) AS count
+	FROM log
+
+	UNION ALL
+
+	SELECT 'CompanyCount' AS name, COUNT(co_cd) AS count
+	FROM company
+
+	UNION ALL
+
+	SELECT 'CommunityCount' AS name, COUNT(cmnty_no) AS count
+	FROM community
+	</select>
+
+
+</mapper>

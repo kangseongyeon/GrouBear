@@ -1,0 +1,531 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+  PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+  "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+  
+  <mapper namespace="kr.or.ddit.comm.elapr.mapper.IElaprMapper">
+  	<sql id="elaprSearch">
+  		<if test="searchWord != null">
+  			and (
+         		elapr_bgng_dt like '%' || #{searchWord} || '%' or
+         		elapr_nm like '%' || #{searchWord} || '%' or
+         		df.doc_form_nm like '%' || #{searchWord} || '%' or
+         		emp.emp_nm like '%' || #{searchWord} || '%' 
+         	)
+  		</if>
+  	</sql>
+  	
+	<resultMap type="kr.or.ddit.comm.elapr.vo.ElaprVO" id="elaprMap">  
+	  		<id property="elaprNo" column="elapr_no" />
+	  		<result property="elaprNo" column="elapr_no" />
+			<result property="docFormNo" column="document_form_no" />
+			<result property="empId" column="emp_id" />
+			<result property="coCd" column="co_cd" />
+			<result property="atchFileCode" column="atch_file_code" />
+			<result property="elaprNm" column="elapr_nm" />
+			<result property="elaprCn" column="elapr_cn" />
+			<result property="elaprBgngDt" column="elapr_bgng_dt" />
+			<result property="elaprMdfcnDt" column="elapr_mdfcn_dt" />
+			<result property="elaprEndDt" column="elapr_end_dt" />
+			<result property="elaprSttsCd" column="elapr_stts_cd" />
+			<result property="elaprDelYn" column="elapr_del_yn" />
+			<result property="elaprEmrgYn" column="elapr_emrg_yn" />
+			<result property="elaprOpnnCn" column="elapr_opnn_cn" />
+			<collection property="aplnList" resultMap="aplnMap"/>
+	  	</resultMap>
+	  	
+	  	<resultMap type="kr.or.ddit.comm.elapr.vo.AplnVO" id="aplnMap">
+	  		<id property="aplnNo" column="apln_no" />
+	  		<result property="aplnNo" column="apln_no" />
+			<result property="elaprNo" column="elapr_no" />
+			<result property="empId" column="emp_id" />
+			<result property="aplnSeq" column="apln_seq" />
+			<result property="aplnSttsCd" column="apln_stts_cd" />
+			<result property="aplnDt" column="apln_dt" />
+			<result property="aplnLastId" column="apln_last_id" />
+			<result property="aplnLastYn" column="apln_last_yn" />
+			<result property="aplnRjctRsn" column="apln_rjct_rsn" />
+			<result property="aplnRealId" column="apln_real_id" />
+			<result property="aplnDelYn" column="apln_del_yn" />
+			<result property="aplnOpninCn" column="apln_opnin_cn" />
+	  	</resultMap>
+	<!-- 전자결재 메인 홈 카드 상단 5개 -->  	
+	<select id="selectElaprCardList"  parameterType="String" resultType="kr.or.ddit.comm.elapr.vo.ElaprVO">
+		SELECT
+		b.*
+		FROM (
+		    SELECT
+		        a.*, row_number() over (order by a.elapr_no desc) rnum
+		    FROM (           
+		        SELECT
+		            ea.elapr_no, elapr_nm, ea.emp_id, elapr_bgng_dt, elapr_end_dt, ea.doc_form_no
+		            , emp.emp_nm, df.doc_form_nm
+		        FROM electronic_approval ea, employee emp, document_form df
+		        WHERE ea.emp_id = emp.emp_id
+		            AND ea.doc_form_no = df.doc_form_no
+		            AND ea.emp_id = #{empId}
+		            AND ea.elapr_del_yn in ('N', 'n') 
+		            AND elapr_stts_cd = 'APRZ001'
+		        ORDER BY ea.elapr_no desc
+		    ) a
+		) b
+	    <![CDATA[
+	    	WHERE b.rnum <= 4
+	    ]]>
+	</select>
+  	
+  	<!-- 전자결재 메인 홈 테이블 -->
+	<select id="selectElaprTableList" parameterType="String" resultType="kr.or.ddit.comm.elapr.vo.ElaprVO">
+		SELECT
+		    a.*
+		FROM (
+		    SELECT
+		        ea.elapr_no, ea.elapr_bgng_dt, elapr_end_dt, ea.elapr_nm, ea.doc_form_no
+		        , d.doc_form_nm, ea.elapr_emrg_yn, ea.atch_file_code, ea.elapr_stts_cd
+		        , ea.emp_id, emp.emp_nm
+		        , row_number() over (partition by ea.elapr_stts_cd order by ea.elapr_no desc) as rnum
+		    FROM electronic_approval ea, document_form d, employee emp
+		    WHERE ea.emp_id = emp.emp_id
+		        AND ea.doc_form_no = d.doc_form_no
+		        AND ea.emp_id = #{empId}
+		        AND ea.elapr_del_yn in ('N', 'n') 
+		    ORDER BY ea.elapr_no desc
+		    ) a
+	    <![CDATA[
+			WHERE a.rnum <= 5
+		]]>     
+		ORDER BY a.elapr_stts_cd, a.elapr_no desc
+	</select>
+	
+	<!-- 전자결재 양식 목록 출력 (Jstree) -->
+   <select id="selectFormListJstree" parameterType="string" resultType="kr.or.ddit.comm.form.vo.FormVO">
+      select doc_form_no, doc_form_nm, doc_form_knd_nm, NVL(DOC_FORM_KND_UP, '#') AS DOC_FORM_KND_UP, co_cd
+      from document_form
+      where doc_form_no = 2
+              or doc_form_knd_up = 2
+              or doc_form_no in (
+                  (select doc_form_no from document_form where doc_form_knd_up in (select doc_form_no from document_form where doc_form_knd_up = 2 ))
+              ) and co_cd in ('cp1', #{coCd}) and DOC_FORM_DEL_YN = 'N'
+      order by DOC_FORM_KND_UP
+	</select>
+	
+	<!-- 전자결재 상세보기 -->
+	<select id="elaprDetail" parameterType="kr.or.ddit.comm.elapr.vo.ElaprVO" resultType="kr.or.ddit.comm.elapr.vo.ElaprVO">
+		SELECT
+		    ea.elapr_no ,ea.doc_form_no ,ea.emp_id ,ea.co_cd ,ea.atch_file_code ,ea.elapr_nm ,ea.elapr_cn
+		   ,ea.elapr_bgng_dt ,ea.elapr_mdfcn_dt ,ea.elapr_end_dt ,ea.elapr_stts_cd ,ea.elapr_del_yn ,ea.elapr_emrg_yn ,ea.elapr_opnn_cn
+		   , emp.emp_nm, emp.dept_cd, d.dept_nm, emp.team_cd, t.team_nm, df.doc_form_nm, j.jbgd_nm, emp.img_file_url
+		FROM
+		    electronic_approval ea, employee emp, department d, team t, document_form df, jobgrade j
+		WHERE ea.elapr_no = #{elaprNo}
+		    AND ea.emp_id = emp.emp_id
+		    AND d.dept_cd = emp.dept_cd
+		    AND emp.team_cd = t.team_cd
+		    AND emp.jbgd_cd = j.jbgd_cd
+		    AND df.doc_form_no = ea.doc_form_no
+	</select>
+	
+	<!-- 전자결재 수정폼 -->
+	<select id="selectElapr" parameterType="int" resultMap="elaprMap">
+		select
+		    ea.elapr_no ,doc_form_no ,ea.emp_id ,co_cd ,elapr_nm ,elapr_cn
+		   ,elapr_bgng_dt ,elapr_mdfcn_dt ,elapr_end_dt ,elapr_stts_cd ,
+		   elapr_del_yn ,elapr_emrg_yn ,elapr_opnn_cn
+		from electronic_approval ea, approval_line a
+		where ea.elapr_no = a.elapr_no and ea.elapr_no = #{elaprNo}
+	</select>
+	
+	
+	<!-- 전자결재 수정하기 -->
+	<update id="elaprUpdate" parameterType="kr.or.ddit.comm.elapr.vo.ElaprVO">
+		update electronic_approval 
+		set 
+			elapr_nm = #{elaprNm},
+		    elapr_cn = #{elaprCn},
+		    elapr_mdfcn_dt = sysdate
+		where elapr_no = #{elaprNo}
+	</update>
+	
+	<!-- 결재선 삭제 -->
+	<update id="deleteAlaprByElaprNo" parameterType="kr.or.ddit.comm.elapr.vo.ElaprVO">
+		update approval_line
+		set
+		    apln_del_yn = 'Y'
+		where elapr_no = #{elaprNo}
+	</update>
+	
+	<!-- 참조자 삭제 -->
+	<update id="deleteRerncByElaprNo" parameterType="kr.or.ddit.comm.elapr.vo.ElaprVO">
+		update rernc
+		set
+		    rernc_del_yn = 'Y'
+		where elapr_no = #{elaprNo}
+	</update>
+	
+	<!-- 열람자 삭제 -->
+	<update id="deletePrslByElaprNo" parameterType="kr.or.ddit.comm.elapr.vo.ElaprVO">
+		update elapr_prsl
+		set
+		    elapr_prsl_del_yn = 'Y'
+		where elapr_no = #{elaprNo}
+	</update>
+	
+	<!-- 전자결재 삭제 -->
+	<update id="deleteElapr" parameterType="kr.or.ddit.comm.elapr.vo.ElaprVO">
+		update electronic_approval
+		set
+		    elapr_del_yn = 'Y'
+		where elapr_no = #{elaprNo}
+	</update>
+	
+	<!-- 전자결재 신청 -->
+	<!-- <insert id="elaprInsert" parameterType="kr.or.ddit.comm.elapr.vo.ElaprVO" useGeneratedKeys="true" keyProperty="elaprNo">
+		<selectKey keyProperty="elaprNo" resultType="int" order="BEFORE"> -->
+	<insert id="elaprInsert" parameterType="kr.or.ddit.comm.elapr.vo.ElaprVO" useGeneratedKeys="true">
+		<selectKey keyProperty="elaprNo" resultType="int" order="BEFORE">
+			select seq_electronic_approval.nextval from dual
+		</selectKey>
+		INSERT INTO electronic_approval (
+		    elapr_no ,doc_form_no ,emp_id ,co_cd ,elapr_nm ,elapr_cn
+		   ,elapr_bgng_dt ,elapr_mdfcn_dt ,elapr_stts_cd ,
+		   elapr_del_yn ,elapr_emrg_yn ,elapr_opnn_cn
+		   , atch_file_cd
+		) VALUES (
+		    #{elaprNo}, #{docFormNo}, #{empId} , #{coCd}, #{elaprNm}, #{elaprCn},
+		    sysdate, sysdate, 'APRZ001', 
+		    'N', #{elaprEmrgYn}, #{elaprOpnnCn}
+		    , #{atchFileCd}
+		)
+	</insert>
+	
+	<!-- 결재선 등록 -->
+	<insert id="insertApln" parameterType="kr.or.ddit.comm.elapr.vo.AplnVO">
+		insert into approval_line (
+		    apln_no, elapr_no, emp_id, apln_seq, apln_stts_cd, apln_dt, apln_last_yn
+		) values (
+		    seq_approval_line.nextval, #{elaprNo}, #{empId}, 
+		    (select nvl(max(apln_seq), 0) + 1 from approval_line where elapr_no = #{elaprNo}) , 
+		    'APLN001', sysdate, 'N'
+		)
+	</insert>
+	
+	<!-- 참조자 등록 -->
+	<insert id="insertRernc" parameterType="kr.or.ddit.comm.elapr.vo.RerncVO">
+		INSERT INTO rernc (
+		    rernc_no ,elapr_no ,emp_id, rernc_del_yn
+		) VALUES (
+		    seq_rernc.nextval, #{elaprNo}, #{empId}, 'N'
+		)
+	</insert>
+	
+	<!-- 열람자 등록 -->
+	<insert id="insertPrsl" parameterType="kr.or.ddit.comm.elapr.vo.ElaprPrslVO">
+		INSERT INTO elapr_prsl (
+		    elapr_prsl_no ,elapr_no ,emp_id ,elapr_prsl_dt ,elapr_prsl_yn, elapr_prsl_del_yn
+		) VALUES (
+		    seq_elapr_prsl.nextval,  #{elaprNo}, #{empId}, sysdate, 'N', 'N'
+		)
+	</insert>
+	
+	<!-- 전자결재 데이터 가져오기 -->
+	<select id="elaprSelectImpl" parameterType="kr.or.ddit.comm.security.vo.EmployeeVO" resultType="kr.or.ddit.comm.empallinfo.vo.EmployeeAllVO">
+		select *
+		from (
+		    select e.emp_id, e.co_cd, e.dept_cd, e.emp_eml_addr, e.emp_nm, e.emp_no, e.emp_zip, 
+		           e.emp_addr, e.emp_daddr, e.emp_telno, e.emp_brdt, emp_gndr, e.emp_ntn, e.emp_jncmp_ymd, 
+		           e.emp_rsgntn_ymd, e.emp_crt_ymd, e.emp_mdfcn_ymd, e.enabled, e.emp_dln_yn, e.img_file_url,
+		           e.team_cd, c.co_nm, c.co_reg_dt, c.co_cnt, c.co_brno, c.co_zip, c.co_addr, c.co_daddr, c.co_tel, c.ceo_nm,
+		           d.dept_nm, d.dept_crt_dt, dept_actvtn_yn, d.dept_img_file_url, t.team_nm, t.team_crt_dt, t.team_actvtn_yn,
+		           e.jbgd_cd, j.jbgd_nm, ea.elapr_bgng_dt
+		    from employee e
+		    join company c ON e.co_cd = c.co_cd
+		    join department d ON e.dept_cd = d.dept_cd
+		    join team t ON e.team_cd = t.team_cd
+		    join jobgrade j ON e.jbgd_cd = j.jbgd_cd
+		    left join electronic_approval ea ON e.emp_id = ea.emp_id
+		    where e.emp_id = #{empId}
+		    order by ea.elapr_bgng_dt desc
+		)
+		WHERE ROWNUM = 1
+	</select>
+	
+	<!--  -->
+	<select id="getElaprByNo" parameterType="int" resultType="int">
+		select elapr_no
+		from electronic_approval
+		where elapr_no = #{elaprNo}
+	</select>
+	
+	<!-- 결재자 정보 가져오기 -->
+	<select id="selectAplnList" parameterType="kr.or.ddit.comm.elapr.vo.AplnVO" resultType="kr.or.ddit.comm.elapr.vo.AplnVO">
+		SELECT
+		    al.apln_no, al.elapr_no, emp.emp_id, al.apln_seq, al.apln_stts_cd, al.apln_dt,
+		    apln_last_id, apln_last_yn, apln_rjct_rsn, apln_opnin_cn,
+		    emp.emp_nm, emp.img_file_url, df.dept_nm, emp.jbgd_cd, j.jbgd_nm
+		FROM approval_line al, employee emp, department df, jobgrade j
+		WHERE al.emp_id = emp.emp_id 
+		    AND emp.dept_cd = df.dept_cd 
+		    AND emp.jbgd_cd = j.jbgd_cd
+		    AND al.elapr_no = #{elaprNo}
+		ORDER BY al.apln_seq
+	</select>
+	
+	<!-- 참조자 정보 가져오기 -->
+	<select id="selectRerncList" parameterType="kr.or.ddit.comm.elapr.vo.RerncVO" resultType="kr.or.ddit.comm.elapr.vo.RerncVO">
+		SELECT
+		    r.rernc_no ,r.elapr_no ,r.emp_id ,r.rernc_del_yn
+		    , emp.emp_nm, emp.img_file_url, df.dept_nm, emp.jbgd_cd, j.jbgd_nm
+		FROM
+		    rernc r, employee emp, department df, jobgrade j
+		WHERE r.emp_id = emp.emp_id 
+		    AND emp.dept_cd = df.dept_cd 
+		    AND emp.jbgd_cd = j.jbgd_cd
+		    AND r.elapr_no = #{elaprNo}
+		ORDER BY r.rernc_no asc
+	</select>
+	
+	<!-- 열람자 정보 가져오기 -->
+	<select id="selectPrslList" parameterType="kr.or.ddit.comm.elapr.vo.ElaprPrslVO" resultType="kr.or.ddit.comm.elapr.vo.ElaprPrslVO">
+		SELECT
+		    ep.elapr_prsl_no ,ep.elapr_no ,ep.emp_id ,ep.elapr_prsl_dt ,ep.elapr_prsl_yn ,ep.elapr_prsl_del_yn
+		    , emp.emp_nm, emp.img_file_url, df.dept_nm, emp.jbgd_cd, j.jbgd_nm
+		FROM
+		    elapr_prsl ep, employee emp, department df, jobgrade j
+		WHERE ep.emp_id = emp.emp_id 
+		    AND emp.dept_cd = df.dept_cd 
+		    AND emp.jbgd_cd = j.jbgd_cd
+		    AND ep.elapr_no = #{elaprNo}
+		ORDER BY ep.elapr_prsl_no asc
+	</select>
+	
+	<!-- /////////////////////////////////////////////////////////////// -->
+	<!-- 결재대기문서 페이징 -->
+	<select id="selectWatingCount" parameterType="kr.or.ddit.comm.paging.vo.PaginationInfoVO" resultType="int">
+		SELECT COUNT (*) total_count
+		FROM (
+		    SELECT
+	            ea.elapr_no, elapr_bgng_dt, elapr_nm, ea.doc_form_no, df.doc_form_nm, elapr_emrg_yn, atch_file_code
+	            , elapr_stts_cd, elapr_del_yn, ap.emp_id, ap.apln_seq, emp.emp_nm, ap.apln_no, ap.apln_stts_cd
+	        FROM electronic_approval ea
+	            JOIN approval_line ap on ea.elapr_no = ap.elapr_no
+	            LEFT JOIN approval_line pre_a on ea.elapr_no = pre_a.elapr_no and pre_a.apln_seq = ap.apln_seq-1
+	            JOIN document_form df on ea.doc_form_no = df.doc_form_no
+	            JOIN employee emp on ea.emp_id = emp.emp_id
+	        WHERE
+	            ap.emp_id = #{empId}
+	            AND ap.apln_stts_cd = 'APLN001'
+	            AND (pre_a.apln_stts_cd = 'APLN002' or pre_a.apln_last_yn is null)
+	            AND ea.elapr_del_yn in ('N', 'n')
+	            <include refid="elaprSearch"/>
+		) a
+	</select>
+	
+	
+	<!-- 결재대기문서 리스트 -->
+	<select id="selectWatingList" parameterType="kr.or.ddit.comm.paging.vo.PaginationInfoVO" resultType="kr.or.ddit.comm.elapr.vo.ElaprVO">
+		SELECT
+		    b.*
+		FROM  (
+		    SELECT
+		        a.*, row_number() over (order by a.elapr_no desc) rnum
+		    FROM (
+		        SELECT
+		            ea.elapr_no, elapr_bgng_dt, elapr_nm, ea.doc_form_no, df.doc_form_nm, elapr_emrg_yn, atch_file_code
+		            , elapr_stts_cd, elapr_del_yn, ap.emp_id, ap.apln_seq, emp.emp_nm, ap.apln_no, ap.apln_stts_cd
+		        FROM electronic_approval ea
+		            JOIN approval_line ap on ea.elapr_no = ap.elapr_no
+		            LEFT JOIN approval_line pre_a on ea.elapr_no = pre_a.elapr_no and pre_a.apln_seq = ap.apln_seq-1
+		            JOIN document_form df on ea.doc_form_no = df.doc_form_no
+		            JOIN employee emp on ea.emp_id = emp.emp_id
+		        WHERE
+		            ap.emp_id = #{empId}
+		            AND ap.apln_stts_cd = 'APLN001'        
+		            AND (pre_a.apln_stts_cd = 'APLN002' or pre_a.apln_last_yn is null)
+		            AND ea.elapr_del_yn in ('N', 'n')
+		            <include refid="elaprSearch"/>
+		        ORDER BY ea.elapr_no desc
+		    ) a
+		) b
+		<![CDATA[
+		WHERE b.rnum >= #{startRow} and b.rnum <=#{endRow}
+		]]>
+	</select>
+	
+	<!-- 결재대기문서 결재진행 -->
+	 <update id="elaprWatingUpdate" parameterType="kr.or.ddit.comm.elapr.vo.AplnVO">
+		UPDATE approval_line
+		SET apln_opnin_cn = #{aplnOpninCn}, 
+		    apln_stts_cd = 'APLN002', 
+		    apln_last_yn = 'Y'
+		WHERE apln_no = (
+		    SELECT apln_no
+		    FROM (
+		        SELECT apln_no
+		        FROM approval_line
+		        WHERE elapr_no = #{elaprNo}
+		          AND apln_stts_cd = 'APLN001'
+		        ORDER BY apln_seq ASC
+		    )
+		    WHERE ROWNUM = 1
+		)
+	</update>
+	
+	<!-- 완료일 변경 -->
+	<update id="updateElaprEndDt" parameterType="kr.or.ddit.comm.elapr.vo.AplnVO">
+		UPDATE electronic_approval
+		SET elapr_end_dt = sysdate
+		WHERE elapr_no = #{elaprNo}
+	</update>
+	
+	<!-- 결재 상태가 모두 완료되었는지 확인 -->
+	<select id="countPendingApprovals" parameterType="int" resultType="int">
+	    SELECT COUNT(*)
+	    FROM approval_line
+	    WHERE elapr_no = #{elaprNo}
+	   	 	AND apln_stts_cd != 'APLN002'
+	</select>
+	
+	
+	<!-- 모든 결재가 완료된 경우 전자결재 상태를 업데이트 -->
+	<update id="updateApprovalStatus" parameterType="map">
+	    UPDATE electronic_approval
+	    SET elapr_stts_cd = #{status}
+	    WHERE elapr_no = #{elaprNo}
+	    AND elapr_stts_cd != 'APRZ002'
+	</update>
+	
+	<!-- 결재대기문서 반려진행 -->
+	<update id="elaprRjctUpdate" parameterType="kr.or.ddit.comm.elapr.vo.AplnVO">
+		UPDATE approval_line
+		SET
+		    apln_stts_cd = 'APLN003',
+		    apln_opnin_cn = CASE 
+                     WHEN apln_seq = (SELECT MIN(apln_seq)
+                                      FROM approval_line
+                                      WHERE elapr_no = #{elaprNo}
+                                      AND apln_stts_cd = 'APLN001')
+                     THEN #{aplnOpninCn}
+                     ELSE '결재안함'
+                   END,
+		    apln_rjct_rsn = '반려'
+		WHERE elapr_no = #{elaprNo}
+		    AND apln_seq >= (SELECT MIN(apln_seq)
+		                     FROM approval_line
+		                     WHERE elapr_no = #{elaprNo}
+		                     AND apln_stts_cd = 'APLN001')
+	</update>
+	
+	<!-- 결재대기문서 반려 상태코드 업데이트 -->
+	<update id="rjctElaprUpdate" parameterType="int" >
+		 UPDATE electronic_approval
+		 SET elapr_stts_cd = 'APRZ003',
+		 	elapr_end_dt = sysdate
+		 WHERE elapr_no = #{elaprNo}
+	</update>
+	
+	<!-- 상신취소 유무 -->
+	<select id="getApprovalCount" parameterType="int" resultType="int">
+		SELECT COUNT (*)
+		FROM approval_line
+		WHERE elapr_no = #{elaprNo}
+		    AND  apln_stts_cd IN ('APLN002', 'APLN003')
+	</select>
+	 
+	 
+	 <select id="atchFileDetailOneSelect" parameterType="String" resultType="kr.or.ddit.comm.file.vo.AtchFileDetailVO">
+		SELECT atch_file_detail_cd
+		   ,atch_file_cd
+		   ,atch_file_detail_path_nm
+		   ,atch_file_detail_extn_nm
+		   ,atch_file_detail_size
+		   ,atch_file_detail_fancysize
+		   ,atch_file_detail_orgnl_nm
+		   ,atch_file_detail_strg_nm
+		   ,atch_file_detail_reg_dt
+		   ,emp_id
+		   ,atch_file_detail_del_yn
+		FROM atch_file_detail
+		WHERE atch_file_detail_cd = #{atchFileDetailCd}
+	 </select>
+	 
+	 <select id="atchFileDetailListSelect" parameterType="String" resultType="kr.or.ddit.comm.file.vo.AtchFileDetailVO">
+	 	SELECT atch_file_detail_cd
+		   ,atch_file_cd
+		   ,atch_file_detail_path_nm
+		   ,atch_file_detail_extn_nm
+		   ,atch_file_detail_size
+		   ,atch_file_detail_fancysize
+		   ,atch_file_detail_orgnl_nm
+		   ,atch_file_detail_strg_nm
+		   ,atch_file_detail_reg_dt
+		   ,emp_id
+		   ,atch_file_detail_del_yn
+		FROM atch_file_detail
+		WHERE atch_file_cd = #{atchFileCd} and
+		      atch_file_detail_del_yn = 'N'
+	 </select>
+	 
+	 <!-- 파일 그룹 등록하기 -->
+	<insert id="atchFileInsert" parameterType="kr.or.ddit.comm.elapr.vo.ElaprVO">
+		<selectKey keyProperty="atchFileCd" order="BEFORE" resultType="String">
+			select 'ELAPR' || SEQ_ATCH_FILE_CD.nextval from dual
+		</selectKey>
+		INSERT INTO atch_file (
+		    atch_file_cd
+		   ,emp_id
+		) VALUES (
+		    #{atchFileCd}
+		   ,#{empId}
+		)
+	</insert>
+	
+	<!-- 개별 파일 등록하기 -->
+	<insert id="fileDetailInsert" parameterType="kr.or.ddit.comm.file.vo.AtchFileDetailVO">
+		INSERT INTO atch_file_detail (
+		    atch_file_detail_cd
+		   ,atch_file_cd
+		   ,atch_file_detail_path_nm
+		   ,atch_file_detail_extn_nm
+		   ,atch_file_detail_size
+		   ,atch_file_detail_fancysize
+		   ,atch_file_detail_orgnl_nm
+		   ,atch_file_detail_strg_nm
+		   ,emp_id
+		) VALUES (
+		    'ELAPRCD' || SEQ_ATCH_FILE_DETAIL_CD.nextval
+		   ,#{atchFileCd}
+		   ,#{atchFileDetailPathNm}
+		   ,#{atchFileDetailExtnNm}
+		   ,#{atchFileDetailSize}
+		   ,#{atchFileDetailFancysize}
+		   ,#{atchFileDetailOrgnlNm}
+		   ,#{atchFileDetailStrgNm}
+		   ,#{empId}
+		)
+	</insert>
+	
+	
+	<!-- 결재선 리스트 조회 -->
+	<select id="getApprovalLineByElaprNo" parameterType="int" resultType="kr.or.ddit.comm.elapr.vo.AplnVO">
+	    SELECT
+	        apln_no,
+	        elapr_no,
+	        emp_id,
+	        apln_seq,
+	        apln_stts_cd,
+	        apln_dt,
+	        apln_last_id,
+	        apln_last_yn,
+	        apln_rjct_rsn,
+	        apln_real_id,
+	        apln_del_yn,
+	        apln_opnin_cn
+	    FROM 
+	        approval_line
+	    WHERE 
+	        elapr_no = #{elaprNo}
+	    ORDER BY 
+	        apln_seq ASC
+	</select>
+		
+  </mapper>

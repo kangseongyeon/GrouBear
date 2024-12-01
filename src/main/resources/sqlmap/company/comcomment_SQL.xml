@@ -1,0 +1,95 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+  PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+  "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="kr.or.ddit.company.comment.mapper.IComCommentMapper">
+
+	<resultMap type="kr.or.ddit.company.comment.vo.ComCommentVO" id="ComCommentMap">
+		<id property="commentNo" column="comment_no" />
+		<result property="commentNo" column="comment_no" />
+		<result property="cmntyNo" column="cmnty_no" />
+		<result property="empId" column="emp_id" />
+		<result property="upCmntNo" column="up_cmnt_no" />
+		<result property="cmntCn" column="cmnt_cn" />
+		<result property="cmntRegDt" column="cmnt_reg_dt" />
+		<collection property="cmntyNo" resultMap="ComCommunityMap" />
+	</resultMap>
+
+	<resultMap type="kr.or.ddit.company.community.vo.ComCommunityVO" id="ComCommunityMap">
+		<id property="cmntyNo" column="cmnty_no" />
+		<result property="cmntyNo" column="cmnty_no" />
+		<result property="empId" column="emp_id" />
+		<result property="coCd" column="co_cd" />
+		<result property="atchFileCd" column="atch_file_cd" />
+		<result property="cmntyType" column="cmnty_type" />
+		<result property="cmntyTtl" column="cmnty_ttl" />
+		<result property="cmntyRegDt" column="cmnty_reg_dt" />
+		<result property="cmntyMdfcnDt" column="cmnty_mdfcn_dt" />
+		<result property="cmntyCn" column="cmnty_cn" />
+		<result property="cmntyDelYn" column="cmnty_del_yn" />
+		<result property="cmntyInqCnt" column="cmnty_inq_cnt" />
+		<result property="cmntyNoticeYn" column="cmnty_notice_yn" />
+		<result property="cmntyQstnKndNm" column="cmnty_qstn_knd_nm" />
+		<result property="cmntyQstnSttsYn" column="cmnty_qstn_stts_yn" />
+	</resultMap>
+
+	<select id="comcommentMain" resultType="kr.or.ddit.company.comment.vo.ComCommentVO" parameterType="int">
+		select
+			c.comment_no,
+			c.cmnty_no,
+			e.emp_id,
+			c.up_cmnt_no,
+			c.cmnt_cn,
+			c.cmnt_reg_dt,
+            e.IMG_FILE_URL AS IMG_FILE_URL
+		from commemt c, employee e
+		where cmnty_no = #{cmntyNo} and c.emp_id = e.emp_id
+		order by cmnt_reg_dt asc
+	</select>
+
+	<insert id="comcommentInsert" parameterType="kr.or.ddit.company.comment.vo.ComCommentVO">
+		insert into commemt(
+			comment_no,
+			cmnty_no,
+			emp_id,
+			cmnt_cn
+		) values (
+			seq_commemt.nextval,
+			#{cmntyNo},
+			#{empId},
+			#{cmntCn}
+		)
+	</insert>
+	
+	<select id="comcommentReply" resultType="kr.or.ddit.company.comment.vo.ComCommentVO" parameterType="int">
+		select
+			c.comment_no,
+			c.cmnty_no,
+			e.emp_id,
+			c.up_cmnt_no,
+			c.cmnt_cn,
+			c.cmnt_reg_dt,
+		e.IMG_FILE_URL AS IMG_FILE_URL
+		from commemt c, employee e
+		where up_cmnt_no = #{commentNo} and c.emp_id = e.emp_id
+		order by cmnt_reg_dt asc
+	</select>
+	
+	<insert id="comreplyInsert" parameterType="kr.or.ddit.company.comment.vo.ComCommentVO">
+		insert into commemt(
+			comment_no,
+			cmnty_no,
+			up_cmnt_no,
+			emp_id,
+			cmnt_cn
+		) values (
+			seq_commemt.nextval,
+			#{cmntyNo},
+			#{upCmntNo},
+			#{empId},
+			#{cmntCn}
+		)
+	</insert>
+
+</mapper>

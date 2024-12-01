@@ -1,0 +1,792 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+  PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+  "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+  
+  <mapper namespace="kr.or.ddit.comm.cloud.mapper.ICloudMapper">
+  	
+  	<!-- 리스트에서 검색어로 조회 -->
+	<sql id="cloudSearch">
+      <if test="searchWord != null">
+         and (
+         		CLOUD_STRG_FLDR_NM like '%' || #{searchWord} || '%' or
+         		CLOUD_FILE_REG_DT like '%' || #{searchWord} || '%' or
+         		CLOUD_FILE_EXTN_NM like '%' || #{searchWord} || '%' or
+         		CLOUD_FILE_FANCYSIZE like '%' || #{searchWord} || '%' or
+         		CLOUD_FILE_ORGNL_NM like '%' || #{searchWord} || '%'
+         	)
+      </if>
+   </sql>
+  	
+  	<!-- 클라우드함 가져오기 (내부에 폴더 및 파일 리스트) -->
+    <resultMap type="kr.or.ddit.comm.cloud.vo.CloudStrgVO" id="cloudStrgListMap">
+    	<id property="cloudStrgCd" column="cloud_strg_cd"/>
+    	<result property="coCd" column="co_cd"/>
+    	<result property="deptCd" column="dept_cd"/>
+    	<result property="empId" column="emp_id"/>
+    	<result property="cloudStrgNm" column="cloud_strg_nm"/>
+    	<result property="cloudStrgCrtDt" column="cloud_strg_crt_dt"/>
+    	<result property="cloudStrgDefaultYn" column="cloud_strg_default_yn"/>
+    	<result property="cloudStrgKnd" column="cloud_strg_knd"/>
+    	<result property="cloudStrgUpCd" column="cloud_strg_up_cd"/>
+    	<collection property="cloudStrgFldrList" resultMap="cloudStrgFldrMap"/>
+    	<collection property="cloudFileList" resultMap="cloudFileMap"/>
+    </resultMap>
+    
+  	<!-- 폴더 가져오기 (내부에 폴더 및 파일 리스트) -->
+    <resultMap type="kr.or.ddit.comm.cloud.vo.CloudStrgVO" id="cloudFlrdListMap">
+    	<collection property="cloudStrgFldrList" resultMap="cloudStrgFldrMap"/>
+    	<collection property="cloudFileList" resultMap="cloudFileMap"/>
+    </resultMap>
+    
+    <!-- 폴더 리스트 가져오기 -->
+    <resultMap type="kr.or.ddit.comm.cloud.vo.CloudStrgFldrVO" id="cloudStrgFldrMap">
+    	<id property="cloudStrgFldrCd" column="cloud_strg_fldr_cd"/>
+    	<result property="cloudStrgFldrNm" column="cloud_strg_fldr_nm"/>
+    	<result property="cloudFldrUpCd" column="cloud_fldr_up_cd"/>
+    	<result property="cloudStrgFldrRegEmpId" column="cloud_strg_fldr_reg_emp_id"/>
+    </resultMap>
+    
+    <!-- 파일 리스트 가져오기 -->
+    <resultMap type="kr.or.ddit.comm.cloud.vo.CloudFileVO" id="cloudFileMap">
+    	<id property="cloudFileCd" column="cloud_file_cd"/>
+    	<result property="cloudFileUpCd" column="cloud_file_up_cd"/>
+    	<result property="cloudFileRegEmpId" column="cloud_file_reg_emp_id"/>
+    	<result property="cloudFileRegDt" column="cloud_file_reg_dt"/>
+    	<result property="cloudFilePathNm" column="cloud_file_path_nm"/>
+    	<result property="cloudFileExtnNm" column="cloud_file_extn_nm"/>
+    	<result property="cloudFileSize" column="cloud_file_size"/>
+    	<result property="cloudFileFancysize" column="cloud_file_fancysize"/>
+    	<result property="cloudFileOrgnlNm" column="cloud_file_orgnl_nm"/>
+    	<result property="cloudFileStrgNm" column="cloud_file_strg_nm"/>
+    </resultMap>
+    
+    <!-- 폴더의 정보 가져오기 (폴더 정보 및 폴더 열람권한 정보)-->
+    <resultMap type="kr.or.ddit.comm.cloud.vo.CloudStrgFldrVO" id="cloudFldrDetail">
+    	<id property="cloudStrgFldrCd" column="cloud_strg_fldr_cd"/>
+    	<result property="cloudStrgFldrNm" column="cloud_strg_fldr_nm"/>
+    	<result property="cloudFldrUpCd" column="cloud_fldr_up_cd"/>
+    	<result property="cloudStrgFldrRegEmpId" column="cloud_strg_fldr_reg_emp_id"/>
+    	<collection property="cloudFldrAuthrtList" resultMap="cloudFldrAuthrtMap"/>
+    </resultMap>
+
+    <!-- 폴더의 열람권한 정보 가져오기 -->
+    <resultMap type="kr.or.ddit.comm.cloud.vo.CloudFldrAuthrtVO" id="cloudFldrAuthrtMap">
+    	<id property="cloudFldrAuthrtNo" column="cloud_fldr_authrt_no"/>
+    	<result property="cloudFldrCd" column="cloud_strg_fldr_cd"/>
+    	<result property="jbgdCd" column="jbgd_cd"/>
+    	<result property="cloudFldrAuthrtYn" column="cloud_fldr_authrt_yn"/>
+    	<result property="cloudFldrAuthrtRegDt" column="cloud_fldr_authrt_reg_dt"/>
+    </resultMap>
+
+  	
+  	<!-- 기업 관리자가 가입했을 때 전사 보관함 생성 -->
+  	<insert id="comCloudStrgCreate" parameterType="kr.or.ddit.comm.security.vo.EmployeeVO">
+		insert into CLOUD_STRG(
+		    CLOUD_STRG_CD,
+		    CO_CD,
+		    EMP_ID,
+		    
+		    CLOUD_STRG_NM,
+		    CLOUD_STRG_KND,
+		    CLOUD_STRG_UP_CD
+		) values (
+		    'STR' || seq_cloud_stgr.nextval,
+		    #{coCd},
+		    #{empId},
+		    
+		    '전사',
+		    'com',
+		    '#'
+		)
+	</insert>
+		
+  	<!-- 부서가 생성됐을 때 부서 보관함 생성 -->
+  	<insert id="deptCloudStrgCreate" parameterType="kr.or.ddit.comm.empallinfo.vo.EmployeeAllVO">
+		insert into CLOUD_STRG(
+		    CLOUD_STRG_CD,
+		    CO_CD,
+		    DEPT_CD,
+		    EMP_ID,
+		    
+		    CLOUD_STRG_NM,
+		    CLOUD_STRG_KND,
+		    CLOUD_STRG_UP_CD
+		) values (
+		    'STR' || seq_cloud_stgr.nextval,
+		    #{coCd},
+		    #{deptCd},
+		    #{empId},
+		    
+		    #{deptNm},
+		    'dept',
+		    '#'
+		)
+  	</insert>
+  	
+  	<!-- 사원이 가입했을 때 개인 기본 보관함 생성 -->
+  	<insert id="empCloudStrgCreate" parameterType="kr.or.ddit.comm.security.vo.EmployeeVO">
+		insert into CLOUD_STRG(
+		    CLOUD_STRG_CD,
+		    CO_CD,
+		    EMP_ID,
+		    
+		    CLOUD_STRG_NM,
+		    CLOUD_STRG_DEFAULT_YN,
+		    CLOUD_STRG_KND,
+		    CLOUD_STRG_UP_CD
+		) values (
+		    'STR' || seq_cloud_stgr.nextval,
+		    #{coCd},
+		    #{empId},
+		    '기본',
+		    'Y',
+		    'prvt',
+		    '#'
+		)
+  	</insert>
+
+
+	<!-- 키워드 검색하기 -->	
+	<select id="cloudListSearch" parameterType="kr.or.ddit.comm.paging.vo.PaginationInfoVO"  resultMap="cloudFlrdListMap">
+		SELECT A.*
+		FROM (SELECT CLOUD_STRG_FLDR_CD,           
+		               CLOUD_STRG_FLDR_NM,             
+		               CLOUD_STRG_FLDR_REG_EMP_ID,    
+		               CLOUD_FLDR_UP_CD,          
+		               NULL AS CLOUD_FILE_CD,           
+		               NULL AS CLOUD_FILE_REG_EMP_ID,    
+		               NULL AS CLOUD_FILE_REG_DT,      
+		               NULL AS CLOUD_FILE_PATH_NM,     
+		               NULL AS CLOUD_FILE_EXTN_NM,     
+		               NULL AS CLOUD_FILE_SIZE,           
+		               NULL AS CLOUD_FILE_FANCYSIZE,     
+		               NULL AS CLOUD_FILE_ORGNL_NM,      
+		               NULL AS CLOUD_FILE_STRG_NM,      
+		               NULL AS CLOUD_FILE_UP_CD,
+		               CO_CD
+		        FROM CLOUD_STRG_FLDR F INNER JOIN EMPLOYEE E ON (F.CLOUD_STRG_FLDR_REG_EMP_ID = E.EMP_ID)
+		            UNION ALL   
+		        SELECT NULL AS CLOUD_STRG_FLDR_CD,        
+		               NULL AS CLOUD_STRG_FLDR_NM,       
+		               NULL AS COLUD_STRG_FLDR_REG_EMP_ID, 
+		               NULL AS COLUD_FLDR_UP_CD, 
+		               CLOUD_FILE_CD,                     
+		               CLOUD_FILE_REG_EMP_ID,           
+		               CLOUD_FILE_REG_DT,               
+		               CLOUD_FILE_PATH_NM,              
+		               CLOUD_FILE_EXTN_NM,            
+		               CLOUD_FILE_SIZE,                 
+		               CLOUD_FILE_FANCYSIZE,            
+		               CLOUD_FILE_ORGNL_NM,           
+		               CLOUD_FILE_STRG_NM,            
+		               CLOUD_FILE_UP_CD,
+		               CO_CD
+		        FROM CLOUD_FILE A INNER JOIN EMPLOYEE E ON (A.CLOUD_FILE_REG_EMP_ID = E.EMP_ID)) A	
+		WHERE A.CO_CD = #{coCd}
+		<include refid="cloudSearch"/>
+		ORDER BY A.CLOUD_STRG_FLDR_NM ASC, A.CLOUD_FILE_ORGNL_NM ASC
+	</select>
+
+	<!-- 키워드 검색하기 카운트 -->	
+	<select id="cloudListSearchCount" parameterType="kr.or.ddit.comm.paging.vo.PaginationInfoVO"  resultType="int">
+		SELECT count(*)
+		FROM (SELECT CLOUD_STRG_FLDR_CD,           
+		               CLOUD_STRG_FLDR_NM,             
+		               CLOUD_STRG_FLDR_REG_EMP_ID,    
+		               CLOUD_FLDR_UP_CD,          
+		               NULL AS CLOUD_FILE_CD,           
+		               NULL AS CLOUD_FILE_REG_EMP_ID,    
+		               NULL AS CLOUD_FILE_REG_DT,      
+		               NULL AS CLOUD_FILE_PATH_NM,     
+		               NULL AS CLOUD_FILE_EXTN_NM,     
+		               NULL AS CLOUD_FILE_SIZE,           
+		               NULL AS CLOUD_FILE_FANCYSIZE,     
+		               NULL AS CLOUD_FILE_ORGNL_NM,      
+		               NULL AS CLOUD_FILE_STRG_NM,      
+		               NULL AS CLOUD_FILE_UP_CD,
+		               CO_CD
+		        FROM CLOUD_STRG_FLDR F INNER JOIN EMPLOYEE E ON (F.CLOUD_STRG_FLDR_REG_EMP_ID = E.EMP_ID)
+		            UNION ALL   
+		        SELECT NULL AS CLOUD_STRG_FLDR_CD,        
+		               NULL AS CLOUD_STRG_FLDR_NM,       
+		               NULL AS COLUD_STRG_FLDR_REG_EMP_ID, 
+		               NULL AS COLUD_FLDR_UP_CD, 
+		               CLOUD_FILE_CD,                     
+		               CLOUD_FILE_REG_EMP_ID,           
+		               CLOUD_FILE_REG_DT,               
+		               CLOUD_FILE_PATH_NM,              
+		               CLOUD_FILE_EXTN_NM,            
+		               CLOUD_FILE_SIZE,                 
+		               CLOUD_FILE_FANCYSIZE,            
+		               CLOUD_FILE_ORGNL_NM,           
+		               CLOUD_FILE_STRG_NM,            
+		               CLOUD_FILE_UP_CD,
+		               CO_CD
+		        FROM CLOUD_FILE A INNER JOIN EMPLOYEE E ON (A.CLOUD_FILE_REG_EMP_ID = E.EMP_ID)) A
+		WHERE A.CO_CD = #{coCd}
+		<include refid="cloudSearch"/>
+		ORDER BY A.CLOUD_STRG_FLDR_NM ASC, A.CLOUD_FILE_ORGNL_NM ASC
+	</select>
+
+    <!-- 클라우드함 내부의 폴더 및 파일 불러오기 -->
+  	<select id="selectCloudStrgInFldrAndFileList" parameterType="String" resultMap="cloudStrgListMap">
+		select a.*, b.*
+		from CLOUD_STRG a
+		    LEFT OUTER JOIN
+		    (SELECT     CLOUD_STRG_FLDR_CD,             
+		                CLOUD_STRG_FLDR_NM,          
+		                CLOUD_STRG_FLDR_REG_EMP_ID,      
+		                CLOUD_FLDR_UP_CD,           
+		                NULL AS CLOUD_FILE_CD,            
+		                NULL AS CLOUD_FILE_REG_EMP_ID, 
+		                NULL AS CLOUD_FILE_REG_DT,        
+		                NULL AS CLOUD_FILE_PATH_NM,      
+		                NULL AS CLOUD_FILE_EXTN_NM,       
+		                NULL AS CLOUD_FILE_SIZE,          
+		                NULL AS CLOUD_FILE_FANCYSIZE,     
+		                NULL AS CLOUD_FILE_ORGNL_NM,     
+		                NULL AS CLOUD_FILE_STRG_NM,     
+		                NULL AS CLOUD_FILE_UP_CD       
+		            FROM CLOUD_STRG_FLDR
+		            WHERE CLOUD_FLDR_UP_CD = #{cloudStrgCd}
+		                UNION ALL
+		            SELECT  NULL AS CLOUD_STRG_FLDR_CD,      
+		                    NULL AS CLOUD_STRG_FLDR_NM,       
+		                    NULL AS COLUD_STRG_FLDR_REG_EMP_ID, 
+		                    NULL AS COLUD_FLDR_UP_CD, 
+		                    CLOUD_FILE_CD,                  
+		                    CLOUD_FILE_REG_EMP_ID,           
+		                    CLOUD_FILE_REG_DT,        
+		                    CLOUD_FILE_PATH_NM,        
+		                    CLOUD_FILE_EXTN_NM,         
+		                    CLOUD_FILE_SIZE,             
+		                    CLOUD_FILE_FANCYSIZE,     
+		                    CLOUD_FILE_ORGNL_NM,          
+		                    CLOUD_FILE_STRG_NM,            
+		                    CLOUD_FILE_UP_CD                   
+		            FROM CLOUD_FILE
+		            WHERE CLOUD_FILE_UP_CD = #{cloudStrgCd}) b
+		    ON a.CLOUD_STRG_CD = b.CLOUD_FLDR_UP_CD OR a.CLOUD_STRG_CD = b.CLOUD_FILE_UP_CD
+		WHERE a.CLOUD_STRG_CD = #{cloudStrgCd}
+		ORDER BY CLOUD_STRG_FLDR_NM ASC, CLOUD_FILE_ORGNL_NM ASC
+  	</select>
+
+    <!-- 폴더 내부의 폴더 및 파일 불러오기 -->
+  	<select id="selectCloudFldrInFldrAndFileList" parameterType="String" resultMap="cloudFlrdListMap">
+		SELECT CLOUD_STRG_FLDR_CD,           
+		       CLOUD_STRG_FLDR_NM,             
+		       CLOUD_STRG_FLDR_REG_EMP_ID,    
+		       CLOUD_FLDR_UP_CD,          
+		       NULL AS CLOUD_FILE_CD,           
+		       NULL AS CLOUD_FILE_REG_EMP_ID,    
+		       NULL AS CLOUD_FILE_REG_DT,      
+		       NULL AS CLOUD_FILE_PATH_NM,     
+		       NULL AS CLOUD_FILE_EXTN_NM,     
+		       NULL AS CLOUD_FILE_SIZE,           
+		       NULL AS CLOUD_FILE_FANCYSIZE,     
+		       NULL AS CLOUD_FILE_ORGNL_NM,      
+		       NULL AS CLOUD_FILE_STRG_NM,      
+		       NULL AS CLOUD_FILE_UP_CD       
+		FROM CLOUD_STRG_FLDR
+		WHERE CLOUD_FLDR_UP_CD = #{cloudStrgFldrCd}
+		    UNION ALL   
+		SELECT NULL AS CLOUD_STRG_FLDR_CD,        
+		       NULL AS CLOUD_STRG_FLDR_NM,       
+		       NULL AS COLUD_STRG_FLDR_REG_EMP_ID, 
+		       NULL AS COLUD_FLDR_UP_CD, 
+		       CLOUD_FILE_CD,                     
+		       CLOUD_FILE_REG_EMP_ID,           
+		       CLOUD_FILE_REG_DT,               
+		       CLOUD_FILE_PATH_NM,              
+		       CLOUD_FILE_EXTN_NM,            
+		       CLOUD_FILE_SIZE,                 
+		       CLOUD_FILE_FANCYSIZE,            
+		       CLOUD_FILE_ORGNL_NM,           
+		       CLOUD_FILE_STRG_NM,            
+		       CLOUD_FILE_UP_CD               
+		FROM CLOUD_FILE
+		WHERE CLOUD_FILE_UP_CD = #{cloudStrgFldrCd}
+		ORDER BY CLOUD_STRG_FLDR_NM ASC, CLOUD_FILE_ORGNL_NM ASC
+  	</select>
+  	
+  	<!-- 클라우드함에서 가져온 폴더 및 파일의 총 카운트 수 -->
+  	<select id="selectCloudStrgInFldrAndFileCount" parameterType="String" resultType="int">
+		select count(*)
+		from CLOUD_STRG a
+		    LEFT OUTER JOIN
+		    (SELECT     CLOUD_STRG_FLDR_CD,              
+		                CLOUD_STRG_FLDR_NM,             
+		                CLOUD_STRG_FLDR_REG_EMP_ID,      
+		                CLOUD_FLDR_UP_CD,            
+		                NULL AS CLOUD_FILE_CD,             
+		                NULL AS CLOUD_FILE_REG_EMP_ID,    
+		                NULL AS CLOUD_FILE_REG_DT,        
+		                NULL AS CLOUD_FILE_PATH_NM,       
+		                NULL AS CLOUD_FILE_EXTN_NM,      
+		                NULL AS CLOUD_FILE_SIZE,         
+		                NULL AS CLOUD_FILE_FANCYSIZE,    
+		                NULL AS CLOUD_FILE_ORGNL_NM,      
+		                NULL AS CLOUD_FILE_STRG_NM,      
+		                NULL AS CLOUD_FILE_UP_CD       
+		            FROM CLOUD_STRG_FLDR
+		            WHERE CLOUD_FLDR_UP_CD = #{cloudStrgCd}
+		                UNION ALL
+		            SELECT  NULL AS CLOUD_STRG_FLDR_CD,       
+		                    NULL AS CLOUD_STRG_FLDR_NM,       
+		                    NULL AS COLUD_STRG_FLDR_REG_EMP_ID,
+		                    NULL AS COLUD_FLDR_UP_CD, 
+		                    CLOUD_FILE_CD,                   
+		                    CLOUD_FILE_REG_EMP_ID,        
+		                    CLOUD_FILE_REG_DT,               
+		                    CLOUD_FILE_PATH_NM,           
+		                    CLOUD_FILE_EXTN_NM,             
+		                    CLOUD_FILE_SIZE,               
+		                    CLOUD_FILE_FANCYSIZE,            
+		                    CLOUD_FILE_ORGNL_NM,             
+		                    CLOUD_FILE_STRG_NM,             
+		                    CLOUD_FILE_UP_CD                 
+		            FROM CLOUD_FILE
+		            WHERE CLOUD_FILE_UP_CD = #{cloudStrgCd}) b
+		    ON a.CLOUD_STRG_CD = b.CLOUD_FLDR_UP_CD OR a.CLOUD_STRG_CD = b.CLOUD_FILE_UP_CD
+		WHERE a.CLOUD_STRG_CD = #{cloudStrgCd}
+		ORDER BY CLOUD_STRG_FLDR_NM ASC, CLOUD_FILE_ORGNL_NM ASC
+  	</select>
+  	
+  	<!-- 폴더에서 가져온 폴더 및 파일의 총 카운트 수 -->
+  	<select id="selectCloudFldrInFldrAndFileCount" parameterType="String" resultType="int">
+		SELECT COUNT(*)
+		FROM (SELECT CLOUD_STRG_FLDR_CD,           
+		               CLOUD_STRG_FLDR_NM,             
+		               CLOUD_STRG_FLDR_REG_EMP_ID,    
+		               CLOUD_FLDR_UP_CD,          
+		               NULL AS CLOUD_FILE_CD,           
+		               NULL AS CLOUD_FILE_REG_EMP_ID,    
+		               NULL AS CLOUD_FILE_REG_DT,      
+		               NULL AS CLOUD_FILE_PATH_NM,     
+		               NULL AS CLOUD_FILE_EXTN_NM,     
+		               NULL AS CLOUD_FILE_SIZE,           
+		               NULL AS CLOUD_FILE_FANCYSIZE,     
+		               NULL AS CLOUD_FILE_ORGNL_NM,      
+		               NULL AS CLOUD_FILE_STRG_NM,      
+		               NULL AS CLOUD_FILE_UP_CD       
+		        FROM CLOUD_STRG_FLDR
+		        WHERE CLOUD_FLDR_UP_CD = #{cloudStrgFldrCd}
+		            UNION ALL   
+		        SELECT NULL AS CLOUD_STRG_FLDR_CD,        
+		               NULL AS CLOUD_STRG_FLDR_NM,       
+		               NULL AS COLUD_STRG_FLDR_REG_EMP_ID, 
+		               NULL AS COLUD_FLDR_UP_CD, 
+		               CLOUD_FILE_CD,                     
+		               CLOUD_FILE_REG_EMP_ID,           
+		               CLOUD_FILE_REG_DT,               
+		               CLOUD_FILE_PATH_NM,              
+		               CLOUD_FILE_EXTN_NM,            
+		               CLOUD_FILE_SIZE,                 
+		               CLOUD_FILE_FANCYSIZE,            
+		               CLOUD_FILE_ORGNL_NM,           
+		               CLOUD_FILE_STRG_NM,            
+		               CLOUD_FILE_UP_CD               
+		        FROM CLOUD_FILE
+		        WHERE CLOUD_FILE_UP_CD = #{cloudStrgFldrCd}
+		        ORDER BY CLOUD_STRG_FLDR_NM ASC, CLOUD_FILE_ORGNL_NM ASC)
+  	</select>
+  	
+  	<!-- 기업관리자의 전사 & 개인 클라우드함 가져오기 (사이드바 클라우드함 리스트) -->
+  	<select id="selectMainCloudStrgList" parameterType="kr.or.ddit.comm.empallinfo.vo.EmployeeAllVO" resultType="kr.or.ddit.comm.cloud.vo.CloudStrgVO">
+		SELECT CLOUD_STRG_CD,
+		        CO_CD,
+		        DEPT_CD,
+		        EMP_ID,
+		        CLOUD_STRG_NM,
+		        CLOUD_STRG_CRT_DT,
+		        CLOUD_STRG_DEFAULT_YN,
+		        CLOUD_STRG_KND,
+		        CLOUD_STRG_UP_CD
+		FROM CLOUD_STRG
+		WHERE (CO_CD = #{coCd} AND CLOUD_STRG_KND = 'com') or 
+		      (CO_CD = #{coCd} AND DEPT_CD = #{deptCd}) or 
+		      (CO_CD = #{coCd} AND EMP_ID = #{empId} AND
+		       CLOUD_STRG_KND = 'prvt' AND CLOUD_STRG_DEFAULT_YN = 'Y')
+  	</select>
+  	
+  	<!-- 개인 클라우드함에 속한 커스텀 클라우드함 불러오기 -->
+  	<select id="selectMyCloudStrgCustomList" parameterType="kr.or.ddit.comm.security.vo.EmployeeVO" resultType="kr.or.ddit.comm.cloud.vo.CloudStrgVO">
+		SELECT CLOUD_STRG_CD,
+		        CO_CD,
+		        DEPT_CD,
+		        EMP_ID,
+		        CLOUD_STRG_NM,
+		        CLOUD_STRG_CRT_DT,
+		        CLOUD_STRG_DEFAULT_YN,
+		        CLOUD_STRG_KND,
+		        CLOUD_STRG_UP_CD
+		FROM CLOUD_STRG
+		WHERE CO_CD = #{coCd} AND EMP_ID = #{empId} AND 
+		        CLOUD_STRG_KND = 'prvt' AND CLOUD_STRG_DEFAULT_YN = 'N'
+		ORDER BY CLOUD_STRG_NM ASC
+  	</select>
+  	
+  	<!-- 선택한 폴더의 정보 및 권한 리스트 불러오기 -->
+  	<select id="selectCloudFldrDetail" parameterType="String" resultMap="cloudFldrDetail">
+		SELECT A.CLOUD_STRG_FLDR_CD, CLOUD_STRG_FLDR_NM, CLOUD_FLDR_UP_CD, CLOUD_STRG_FLDR_REG_EMP_ID,
+		       CLOUD_FLDR_AUTHRT_NO, JBGD_CD, CLOUD_FLDR_AUTHRT_YN, CLOUD_FLDR_AUTHRT_REG_DT
+		FROM CLOUD_STRG_FLDR A LEFT OUTER JOIN CLOUD_FLDR_AUTHRT B ON (A.CLOUD_STRG_FLDR_CD = B.CLOUD_STRG_FLDR_CD)
+		WHERE A.CLOUD_STRG_FLDR_CD = #{cloudStrgFldrCd}
+  	</select>
+  	
+  	<!-- 선택한 폴더의 경로를 계층형으로 가져오기 -->
+  	<select id="selectCloudPath" parameterType="String" resultType="kr.or.ddit.comm.cloud.vo.CloudStrgVO">
+		SELECT *
+		FROM (SELECT CLOUD_STRG_FLDR_NM CLOUD_NM, CLOUD_STRG_FLDR_CD CLOUD_CD, CLOUD_FLDR_UP_CD CLOUD_UP_CD
+		        FROM CLOUD_STRG_FLDR
+		        START WITH 
+		            CLOUD_STRG_FLDR_CD = #{cloudCd}
+		        CONNECT BY 
+		            PRIOR CLOUD_FLDR_UP_CD = CLOUD_STRG_FLDR_CD
+		        
+		        UNION ALL
+		        
+		        SELECT CLOUD_STRG_NM CLOUD_NM, CLOUD_STRG_CD CLOUD_CD, CLOUD_STRG_UP_CD CLOUD_UP_CD
+		        FROM CLOUD_STRG
+		        WHERE CLOUD_STRG_CD = (SELECT CLOUD_FLDR_UP_CD
+		                                FROM (SELECT CLOUD_STRG_FLDR_NM, CLOUD_STRG_FLDR_CD, CLOUD_FLDR_UP_CD
+		                                        FROM CLOUD_STRG_FLDR
+		                                        START WITH 
+		                                            CLOUD_STRG_FLDR_CD = #{cloudCd}
+		                                        CONNECT BY 
+		                                            PRIOR CLOUD_FLDR_UP_CD = CLOUD_STRG_FLDR_CD
+		                                        ORDER BY ROWNUM DESC)
+		                                WHERE ROWNUM = 1))
+		ORDER BY ROWNUM DESC
+  	</select>
+  	
+  	<!-- Jstree를 가져오기 위한 루트 클라우드함 리스트 가져오기 (Jstree) -->
+  	<select id="cloudSelectRootStrg" parameterType="HashMap" resultType="kr.or.ddit.comm.cloud.vo.StrgListVO">
+		select CLOUD_STRG_CD as STRG_CD,
+		        CLOUD_STRG_NM as STRG_NM,
+		        CLOUD_STRG_UP_CD as STRG_UP_CD
+		from CLOUD_STRG
+		where CLOUD_STRG_CD in (#{com}, #{dept}, #{my})
+		
+		union
+		
+		select CLOUD_STRG_CD as STRG_CD,
+		        CLOUD_STRG_NM as STRG_NM,
+		        CLOUD_STRG_UP_CD as STRG_UP_CD
+		from CLOUD_STRG
+		where CO_CD = #{coCd} AND EMP_ID = #{empId}
+		        AND CLOUD_STRG_KND = 'prvt'
+  	</select>
+  	
+  	<!-- 업로드시 선택할 클라우드함 및 폴더 경로 출력하기 (Jstree)  -->
+  	<select id="cloudSelectJstree" parameterType="java.util.List" resultType="kr.or.ddit.comm.cloud.vo.StrgListVO">
+		select CLOUD_STRG_FLDR_CD as STRG_CD,
+		        CLOUD_STRG_FLDR_NM as STRG_NM,
+		        CLOUD_FLDR_UP_CD as STRG_UP_CD
+		FROM CLOUD_STRG_FLDR
+		START WITH 
+		    CLOUD_FLDR_UP_CD in (
+		<foreach collection="list" item="item" separator=",">
+			#{item.strgCd}
+		</foreach>
+								)
+		CONNECT BY 
+		    PRIOR CLOUD_STRG_FLDR_CD = CLOUD_FLDR_UP_CD
+		order by STRG_NM asc
+  	</select>
+  	
+  	<!-- 클라우드 파일 업로드하기 -->
+  	<insert id="cloudFileListInsert" parameterType="kr.or.ddit.comm.cloud.vo.CloudFileVO">
+		INSERT INTO cloud_file (
+		    cloud_file_cd
+		   ,cloud_file_up_cd
+		   ,cloud_file_reg_emp_id
+		   ,cloud_file_reg_dt
+		   ,cloud_file_path_nm
+		   
+		   ,cloud_file_extn_nm
+		   ,cloud_file_size
+		   ,cloud_file_fancysize
+		   ,cloud_file_orgnl_nm
+		   ,cloud_file_strg_nm
+		) VALUES (
+		    'FIL' || seq_cloud_file.nextval,
+		    #{cloudFileUpCd},
+		    #{cloudFileRegEmpId},
+		    sysdate,
+		    #{cloudFilePathNm},
+		    #{cloudFileExtnNm},
+		    #{cloudFileSize},
+		    #{cloudFileFancysize},
+		    #{cloudFileOrgnlNm},
+		    #{cloudFileStrgNm}
+		)
+  	</insert>
+  	
+  	<!-- 선택한 폴더 또는 클라우드함의 가장 상위 클라우드함 가져오기 -->
+  	<select id="selectParentCloud" parameterType="String" resultType="kr.or.ddit.comm.cloud.vo.CloudStrgVO">
+		SELECT CLOUD_STRG_CD CLOUD_CD, 
+		        CLOUD_STRG_NM CLOUD_NM, 
+		        CLOUD_STRG_UP_CD CLOUD_UP_CD,
+		        CLOUD_STRG_KND CLOUD_KND,
+		        CLOUD_STRG_DEFAULT_YN
+		FROM CLOUD_STRG
+		WHERE CLOUD_STRG_CD = (SELECT CLOUD_FLDR_UP_CD
+		                        FROM (SELECT CLOUD_STRG_FLDR_NM, CLOUD_FLDR_UP_CD
+		                                FROM CLOUD_STRG_FLDR
+		                                START WITH 
+		                                    CLOUD_STRG_FLDR_CD = #{CloudCd}
+		                                CONNECT BY 
+		                                    PRIOR CLOUD_FLDR_UP_CD = CLOUD_STRG_FLDR_CD
+		                                ORDER BY ROWNUM DESC)
+		                                WHERE ROWNUM = 1) or
+		        CLOUD_STRG_CD in (#{CloudCd})
+  	</select>
+  	
+  	<!-- 폴더를 다른 저장소로 이동하기 -->
+  	<update id="cloudMoveFldr">
+		update CLOUD_STRG_FLDR
+		set CLOUD_FLDR_UP_CD = #{cloudUpCd}
+		where CLOUD_STRG_FLDR_CD = #{fldrOrFileCd}
+  	</update>
+  	
+  	<!-- 파일을 다른 저장소로 이동하기 -->
+  	<update id="cloudMoveFile">
+		update cloud_file
+		set CLOUD_FILE_UP_CD = #{cloudUpCd}
+		where CLOUD_FILE_CD = #{fldrOrFileCd}
+  	</update>
+  	
+  	<!-- 선택한 폴더 중에 하위 폴더가 있는지 여부 확인 -->
+  	<select id="innerDownFlrdCheck" parameterType="kr.or.ddit.comm.cloud.vo.CloudFldrOrFileVO" resultType="int">
+		select count(*)
+		from CLOUD_STRG_FLDR
+		where CLOUD_FLDR_UP_CD = #{fldrOrFileCd}
+  	</select>
+  
+  	<!-- 개인 커스텀 클라우드함 만들기 -->
+  	<insert id="cloudStrgCustomInsert" parameterType="kr.or.ddit.comm.cloud.vo.CloudStrgVO" useGeneratedKeys="true">
+  		<selectKey keyProperty="cloudStrgCd" resultType="String" order="BEFORE">
+  			select 'STR' || seq_cloud_stgr.nextval from dual
+  		</selectKey>
+		insert into CLOUD_STRG (
+		    CLOUD_STRG_CD,
+		    CO_CD,
+		    EMP_ID,
+		    CLOUD_STRG_NM,
+		    
+		    CLOUD_STRG_CRT_DT,
+		    CLOUD_STRG_DEFAULT_YN,
+		    CLOUD_STRG_KND,
+		    CLOUD_STRG_UP_CD
+		) values (
+		    #{cloudStrgCd},
+		    #{coCd},
+		    #{empId},
+		    #{cloudStrgNm},
+		    
+		    sysdate,
+		    'N',
+		    'prvt',
+		    '#'
+		)
+  	</insert>
+  	
+  	<!-- 개인 커스텀 클라우드함 삭제하기 -->
+  	<delete id="cloudStrgCustomDelete" parameterType="kr.or.ddit.comm.cloud.vo.CloudStrgVO">
+		delete from CLOUD_STRG
+		where CLOUD_STRG_CD = #{cloudStrgCd}
+  	</delete>
+  
+  	<!-- 특정 클라우드함의 정보 가져오기 -->
+  	<select id="selectCloudStrg" parameterType="String" resultType="kr.or.ddit.comm.cloud.vo.CloudStrgVO">
+  		select * from CLOUD_STRG where CLOUD_STRG_CD = #{cloudStrgCd}
+  	</select>
+  
+  	<!-- 특정 폴더의 정보 가져오기 -->
+  	<select id="selectCloudFldr" parameterType="kr.or.ddit.comm.cloud.vo.CloudFldrOrFileVO" resultType="kr.or.ddit.comm.cloud.vo.CloudStrgFldrVO">
+  		select * from CLOUD_STRG_FLDR where CLOUD_STRG_FLDR_CD = #{fldrOrFileCd}
+  	</select>
+  
+  	<!-- 특정 파일의 정보 가져오기 -->
+  	<select id="selectCloudFile" parameterType="kr.or.ddit.comm.cloud.vo.CloudFldrOrFileVO" resultType="kr.or.ddit.comm.cloud.vo.CloudFileVO">
+  		select * from CLOUD_FILE where CLOUD_FILE_CD = #{fldrOrFileCd}
+  	</select>
+  	
+  	<!-- 폴더 삭제하기 -->
+  	<delete id="cloudFldrDelete" parameterType="kr.or.ddit.comm.cloud.vo.CloudFldrOrFileVO">
+  		delete from CLOUD_STRG_FLDR where CLOUD_STRG_FLDR_CD = #{fldrOrFileCd}
+  	</delete>
+  	
+  	<!-- 파일 삭제하기 -->
+  	<delete id="cloudFileDelete" parameterType="kr.or.ddit.comm.cloud.vo.CloudFldrOrFileVO">
+  		delete from CLOUD_FILE where CLOUD_FILE_CD = #{fldrOrFileCd}
+  	</delete>
+  	
+  	<!-- 회사의 직급 정보 가져오기 -->
+  	<select id="jobgradeSelectList" parameterType="String" resultType="kr.or.ddit.company.personnelInformation.vo.JobGradeVO">
+		SELECT jbgd_cd
+			   ,co_cd
+			   ,jbgd_nm
+			   ,jbgd_crt_dt
+			   ,jbgd_auth_prord
+		FROM jobgrade
+		WHERE co_cd = #{coCd}
+		ORDER BY jbgd_auth_prord ASC
+  	</select>
+  	
+  	<!-- 새폴더 만들기 -->
+  	<insert id="cloudNewFldrInsert" parameterType="kr.or.ddit.comm.cloud.vo.CloudStrgFldrVO" useGeneratedKeys="true">
+  		<selectKey keyProperty="cloudStrgFldrCd" order="BEFORE" resultType="String">
+		   select 'FDR' || seq_cloud_stgr_flde.nextval from dual
+  		</selectKey>
+		INSERT INTO cloud_strg_fldr (
+		    cloud_strg_fldr_cd
+		   ,cloud_strg_fldr_nm
+		   ,cloud_fldr_up_cd
+		   ,cloud_strg_fldr_reg_emp_id
+		) VALUES (
+			#{cloudStrgFldrCd}
+		   ,#{cloudStrgFldrNm}
+		   ,#{cloudFldrUpCd}
+		   ,#{cloudStrgFldrRegEmpId}
+		)
+  	</insert>
+  	
+  	<!-- 폴더 권한 등록하기 -->
+  	<insert id="cloudFldrAuthListInsert" parameterType="kr.or.ddit.comm.cloud.vo.CloudFldrAuthrtVO">
+		INSERT INTO cloud_fldr_authrt (
+		    cloud_fldr_authrt_no
+		   ,cloud_strg_fldr_cd
+		   ,jbgd_cd
+		   ,cloud_fldr_authrt_yn
+		   ,cloud_fldr_authrt_reg_dt
+		) VALUES (
+		   seq_cloud_fldr_authrt.nextval
+		   ,#{cloudFldrCd}
+		   ,#{jbgdCd}
+		   ,#{cloudFldrAuthrtYn}
+		   ,sysdate
+		)
+  	</insert>
+  	
+  	<!-- 기존 폴더의 열람 권한 리스트 불러오기 -->
+  	<select id="cloudFldrAuthrtListSelect" parameterType="String" resultType="kr.or.ddit.comm.cloud.vo.CloudFldrAuthrtVO">
+		select c.*, j.jbgd_auth_prord, j.jbgd_nm
+		from cloud_fldr_authrt c inner join jobgrade j on (c.jbgd_cd = j.jbgd_cd)
+		where cloud_strg_fldr_cd = #{cloudStrgFldrCd}
+		order by jbgd_auth_prord asc
+  	</select>
+  	
+  	<!-- 클라우드 폴더 수정하기 -->
+  	<update id="cloudFldrUpdate" parameterType="kr.or.ddit.comm.cloud.vo.CloudStrgFldrVO">
+		UPDATE cloud_strg_fldr
+		SET CLOUD_STRG_FLDR_NM = #{cloudStrgFldrNm}
+		WHERE cloud_strg_fldr_cd = #{cloudStrgFldrCd}
+  	</update>
+  	
+  	<!-- 클라우드 폴더의 열람권한 리스트 삭제하기 -->
+  	<delete id="cloudFldrAuthrtListDelete" parameterType="kr.or.ddit.comm.cloud.vo.CloudStrgFldrVO">
+	  	DELETE FROM cloud_fldr_authrt
+		WHERE CLOUD_STRG_FLDR_CD = #{cloudStrgFldrCd}
+  	</delete>
+  	
+  	<!-- 폴더명 중복 체크하기 -->
+  	<select id="newCloudFldrNameCheck" parameterType="kr.or.ddit.comm.cloud.vo.CloudStrgFldrVO" resultType="int">
+		SELECT count(*)
+		FROM cloud_strg_fldr
+		WHERE cloud_strg_fldr_nm = #{cloudStrgFldrNm}
+  	</select>
+  	
+  	<!-- 폴더명 중복 체크하기 -->
+  	<select id="modifyCloudFldrNameCheck" parameterType="kr.or.ddit.comm.cloud.vo.CloudStrgFldrVO" resultType="int">
+		SELECT count(*)
+		FROM cloud_strg_fldr
+		WHERE cloud_strg_fldr_cd != #{cloudStrgFldrCd} and cloud_strg_fldr_nm = #{cloudStrgFldrNm}
+  	</select>
+  
+  	<!-- 특정 폴더의 권한 가져오기 -->
+  	<select id="fldrAuthrtSelectList" parameterType="String" resultType="kr.or.ddit.comm.cloud.vo.CloudFldrAuthrtVO">
+		SELECT cloud_fldr_authrt_no
+		       ,cloud_strg_fldr_cd
+		       ,jbgd_cd
+		       ,cloud_fldr_authrt_yn
+		       ,cloud_fldr_authrt_reg_dt
+		FROM cloud_fldr_authrt
+		where cloud_strg_fldr_cd = #{cloudStrgFldrCd}
+  	</select>
+  
+  	<!-- 폴더 권한 바꾸기 (Y) -->
+  	<update id="cloudFldrAuthListUpdateY" parameterType="CloudFldrAuthrtVO">
+		UPDATE cloud_fldr_authrt
+		SET cloud_fldr_authrt_yn = 'Y'
+		WHERE cloud_fldr_authrt_no = #{cloudFldrAuthrtNo}
+  	</update>
+  
+  	<!-- 폴더 권한 바꾸기 (N) -->
+  	<update id="cloudFldrAuthListUpdateN" parameterType="CloudFldrAuthrtVO">
+		UPDATE cloud_fldr_authrt
+		SET cloud_fldr_authrt_yn = 'N'
+		WHERE cloud_fldr_authrt_no = #{cloudFldrAuthrtNo}
+  	</update>
+  	
+  	<!-- 파일의 저장 경로명 수정하기 -->
+  	<update id="cloudFilePathUpdate" parameterType="kr.or.ddit.comm.cloud.vo.CloudFileVO">
+		UPDATE cloud_file
+		SET cloud_file_path_nm = #{cloudFilePathNm}
+		WHERE cloud_file_cd = #{cloudFileCd}
+  	</update>
+  
+  	<!-- 특정 폴더에 속한 파일 리스트 가져오기 -->
+  	<select id="cloudFileListSelect" parameterType="String" resultType="kr.or.ddit.comm.cloud.vo.CloudFileVO">
+		SELECT CLOUD_FILE_CD,                     
+		       CLOUD_FILE_REG_EMP_ID,           
+		       CLOUD_FILE_REG_DT,               
+		       CLOUD_FILE_PATH_NM,              
+		       CLOUD_FILE_EXTN_NM,            
+		       CLOUD_FILE_SIZE,                 
+		       CLOUD_FILE_FANCYSIZE,            
+		       CLOUD_FILE_ORGNL_NM,           
+		       CLOUD_FILE_STRG_NM,            
+		       CLOUD_FILE_UP_CD               
+		FROM CLOUD_FILE
+		WHERE CLOUD_FILE_UP_CD = #{cloudStrgFldrCd}
+		ORDER BY CLOUD_FILE_ORGNL_NM ASC
+  	</select>
+  	
+  	<!-- 지정한 클라우드함 내의 모든 파일 크기의 합 가져오기 -->
+  	<select id="cloudStrgFileSizeSumSelect" parameterType="String" resultType="java.lang.Long">
+		select NVL(sum(CLOUD_FILE_SIZE), 0) as CLOUD_FILE_SIZE
+		from CLOUD_FILE
+		where CLOUD_FILE_UP_CD in (SELECT CLOUD_STRG_FLDR_CD
+		                            FROM CLOUD_STRG_FLDR
+		                            START WITH 
+		                                CLOUD_FLDR_UP_CD = #{cloudStrgCd}
+		                            CONNECT BY 
+		                                PRIOR CLOUD_STRG_FLDR_CD = CLOUD_FLDR_UP_CD)
+  	</select>
+  	
+  	<!-- 업로드하려는 기업의 클라우드에 중복 파일 이름이 있는지 체크하기 (검색 다운로드 중복 막기 위함) -->
+  	<select id="cloudFileNameCheck" parameterType="kr.or.ddit.comm.cloud.vo.CloudFileVO" resultType="int">
+		select count(*)
+		from employee e inner join cloud_file c on (e.emp_id = c.CLOUD_FILE_REG_EMP_ID)
+		where co_cd = #{coCd} and 
+			  CLOUD_FILE_ORGNL_NM = #{cloudFileOrgnlNm} and 
+			  CLOUD_FILE_UP_CD = #{cloudFileUpCd}
+  	</select>
+  	
+  	<!-- 각 폴더가 내 직급으로 열람 권한이 있는지 여부를 확인하기 -->
+  	<select id="cloudFldrAuthCheckOne" parameterType="Map" resultType="String">
+		SELECT CASE WHEN (SELECT COUNT(*)
+		                  FROM CLOUD_FLDR_AUTHRT c 
+		                  INNER JOIN JOBGRADE j ON (c.JBGD_CD = j.JBGD_CD)
+		                  WHERE c.CLOUD_STRG_FLDR_CD = #{cloudStrgFldrCd}
+		                    AND c.CLOUD_FLDR_AUTHRT_YN = 'Y'      
+		                    AND j.JBGD_CD = #{jbgdCd}) = 0 THEN 'N' 
+		            ELSE 'Y' 
+		        END AS cloudFldrAuthYn
+		FROM DUAL
+  	</select>
+
+  </mapper>

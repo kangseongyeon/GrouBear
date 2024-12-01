@@ -1,0 +1,70 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE tiles-definitions PUBLIC "-//Apache Software Foundation//DTD Tiles Configuration 3.0//EN" "http://tiles.apache.org/dtds/tiles-config_3_0.dtd">
+<tiles-definitions>
+	<!-- 메인 페이지 tiles 세팅 -->
+	<definition name="mainTemplate" template="/WEB-INF/views/mainTemplate.jsp">
+		<put-attribute name="header" value="/WEB-INF/views/tiles/header.jsp" />
+		<put-attribute name="sidebar" value="/WEB-INF/views/tiles/sidebar.jsp" />
+	</definition>
+	
+	<definition name="main/*/*" extends="mainTemplate">
+		<put-attribute name="content" value="/WEB-INF/views/main/{1}/{2}.jsp" />
+	</definition>
+	
+	<definition name="main/*/*/*" extends="mainTemplate">
+		<put-attribute name="content" value="/WEB-INF/views/main/{1}/{2}/{3}.jsp" />
+	</definition>
+	
+	<!-- 그룹웨어 관리자  -->
+	<definition name="groubearTemplate" template="/WEB-INF/views/template/groubearTemplate.jsp">
+		<put-attribute name="header" value="/WEB-INF/views/tiles/groubear/header.jsp" />
+		<put-attribute name="sidebar" value="/WEB-INF/views/tiles/groubear/sidebar.jsp" />
+	</definition>
+	
+	<definition name="groubear/*" extends="groubearTemplate">
+		<put-attribute name="content" value="/WEB-INF/views/main/groubear/{1}.jsp" />
+	</definition>
+	
+	<definition name="groubear/*/*" extends="groubearTemplate">
+		<put-attribute name="content" value="/WEB-INF/views/main/groubear/{1}/{2}.jsp" />
+	</definition>
+	
+	<!-- 기업관리자 -->
+	<definition name="companyTemplate" template="/WEB-INF/views/template/companyTemplate.jsp">
+		<put-attribute name="header" value="/WEB-INF/views/tiles/company/header.jsp" />
+		<put-attribute name="sidebar" value="/WEB-INF/views/tiles/company/sidebar.jsp" />
+	</definition>
+	
+	<definition name="company/*" extends="companyTemplate">
+		<put-attribute name="content" value="/WEB-INF/views/main/company/{1}.jsp" />
+	</definition>	
+	
+	<definition name="company/*/*" extends="companyTemplate">
+		<put-attribute name="content" value="/WEB-INF/views/main/company/{1}/{2}.jsp" />
+	</definition>
+	
+	<!-- 사원 -->
+	<definition name="employeeTemplate" template="/WEB-INF/views/template/employeeTemplate.jsp">
+		<put-attribute name="header" value="/WEB-INF/views/tiles/employee/header.jsp" />
+		<put-attribute name="sidebar" value="/WEB-INF/views/tiles/employee/sidebar.jsp" />
+	</definition>
+	
+	<definition name="employee/*" extends="employeeTemplate">
+		<put-attribute name="content" value="/WEB-INF/views/main/employee/{1}.jsp" />
+	</definition>
+	
+	
+	<definition name="employee/*/*" extends="employeeTemplate">
+		<put-attribute name="content" value="/WEB-INF/views/main/employee/{1}/{2}.jsp" />
+	</definition>
+	
+	
+	<!-- 페이지 접속시 로그인 페이지로 이동 -->
+	<definition name="loginTemplate" template="/WEB-INF/views/loginTemplate.jsp"></definition>
+	
+	
+	<definition name="main/*" extends="loginTemplate">			
+		<put-attribute name="content" value="/WEB-INF/views/notice/{1}.jsp" />
+	</definition>
+	
+</tiles-definitions>

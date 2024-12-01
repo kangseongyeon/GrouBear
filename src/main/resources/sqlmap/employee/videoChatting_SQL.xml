@@ -1,0 +1,110 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+  PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+  "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+  <mapper namespace="kr.or.ddit.employee.videoChatting.mapper.IVideoChattingMapper">
+  
+  <sql id="vcSearch">
+      <if test="searchWord != null">
+         and (
+         		chat_no like '%' || #{searchWord} || '%' or
+         		video_chat_nm like '%' || #{searchWord} || '%' or
+         		video_chat_date like '%' || #{searchWord} || '%' or
+         		video_chat_url like '%' || #{searchWord} || '%'
+         	)
+      </if>
+   </sql>
+  
+  
+  <insert id = "vcInsert" parameterType="kr.or.ddit.employee.videoChatting.vo.VideoChattingVO">
+	  insert into video_chatting(
+	  chat_no, video_chat_nm, video_chat_date, video_chat_mas, video_chat_url, video_chat_pw, video_chat_delyn, password_required, video_chat_com, video_chat_id
+	  )values(
+	  	seq_chat_no.nextval, #{videoChatNm}, #{videoChatDate}, #{videoChatMas}, #{videoChatUrl}, #{videoChatPw}, 'N', #{passwordRequired}, #{videoChatCom}, #{videoChatId}
+	  )
+  </insert>
+  
+  <select id="selectVcRoom" parameterType="PaginationInfoVO" resultType="int">
+	SELECT COUNT(chat_no)
+FROM video_chatting
+WHERE 1=1
+  AND video_chat_delyn = 'N'
+	<include refid="vcSearch"/>
+  </select>
+
+	<select id="selectVcList" parameterType="PaginationInfoVO" resultType="kr.or.ddit.employee.videoChatting.vo.VideoChattingVO">
+		 SELECT 
+    b.*, 
+    c.co_nm 
+FROM (
+    SELECT 
+        a.*, 
+        ROW_NUMBER() OVER (ORDER BY a.chat_no ASC) AS rnum
+    FROM (
+        SELECT 
+            chat_no, 
+            video_chat_nm, 
+            video_chat_mas, 
+            video_chat_date, 
+            video_chat_pw, 
+            video_chat_id, 
+            password_required, 
+            video_chat_com
+        FROM 
+            video_chatting
+        WHERE 
+            1=1
+            <include refid="vcSearch"/>
+            AND video_chat_delyn = 'N'
+        ORDER BY 
+            chat_no ASC
+    ) a
+) b
+JOIN company c ON b.video_chat_com = c.co_cd
+ <![CDATA[
+WHERE 
+    b.rnum >= #{startRow} 
+    AND b.rnum <= #{endRow}
+]]>
+		 
+		 
+<!-- 		 select -->
+<!--               b.* -->
+<!--             from(               -->
+<!--                  select -->
+<!--                     a.*, row_number() over (order by a.chat_no desc) rnum -->
+<!--                  from( -->
+<!--                    select -->
+<!--                       chat_no, video_chat_nm, video_chat_mas, video_chat_date, video_chat_pw, password_required -->
+<!--                     from video_chatting -->
+<!--                     where 1=1 -->
+<!--                     <include refid="vcSearch"/> -->
+<!--                     AND video_chat_delyn = 'N'  -->
+<!--                     order by chat_no desc -->
+<!--                  ) a -->
+<!--               ) b -->
+<!--            <![CDATA[ -->
+<!--            where b.rnum >= #{startRow} and b.rnum <= #{endRow} -->
+<!--            ]]> -->
+	</select>
+	
+<!-- 	<delete id="vcDelete" parameterType="string"> -->
+<!-- 		 DELETE FROM video_chatting WHERE chat_no = #{id} -->
+<!-- 	</delete> -->
+	
+	<update id="vcDelete" parameterType="string">
+		update video_chatting
+		set video_chat_delyn = 'Y'
+		where chat_no = #{id}
+	</update>
+	
+	<select id="getAllRooms" parameterType="kr.or.ddit.employee.videoChatting.vo.VideoChattingVO" resultType="kr.or.ddit.employee.videoChatting.vo.VideoChattingVO">
+		select video_chat_nm, video_chat_pw, password_required
+		from video_chatting
+	</select>
+	
+	
+  
+  
+  
+  </mapper>

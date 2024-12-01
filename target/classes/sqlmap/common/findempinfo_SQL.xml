@@ -1,0 +1,44 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+  PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+  "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+  
+  <mapper namespace="kr.or.ddit.comm.findempinfo.mapper.IFindEmpInfoMapper">
+  
+  	<select id="findId" parameterType="kr.or.ddit.comm.security.vo.EmployeeVO" resultType="string">
+  		SELECT EMP_ID
+		FROM EMPLOYEE WHERE EMP_NM  =  #{empNm} AND EMP_EML_ADDR =#{empEmlAddr}
+  	</select>
+  	<select id="findemail" parameterType="kr.or.ddit.comm.security.vo.EmployeeVO" resultType="string">
+  		SELECT EMP_EML_ADDR
+		FROM EMPLOYEE WHERE EMP_NM  =  #{empNm} AND EMP_ID = #{empId}
+  	</select>
+  	
+  	<insert id="insertAuthNum" parameterType="kr.or.ddit.comm.findempinfo.vo.MailAuthVO">
+  		INSERT INTO MAILAUTH
+			(EMP_ID, AUTH_NUM)
+		VALUES
+			(#{empId}, #{authNum})
+  
+  	</insert>
+  	
+  	<select id="getAuthNum" parameterType="kr.or.ddit.comm.findempinfo.vo.MailAuthVO" resultType="int">
+  		SELECT 
+  			AUTH_NUM
+		FROM MAILAUTH
+		WHERE EMP_ID = #{empId}
+  	</select>
+  	<delete id="delAuthNum">
+  	DELETE FROM 
+  		MAILAUTH
+	WHERE 
+		EMP_ID=#{empId} 
+  	</delete>
+  	
+  	<update id="changepw" parameterType="kr.or.ddit.comm.security.vo.EmployeeVO" >
+  		UPDATE EMPLOYEE
+		SET EMP_PW = #{empPw}
+		WHERE EMP_ID = #{empId}
+  	</update>
+  	
+  </mapper>
