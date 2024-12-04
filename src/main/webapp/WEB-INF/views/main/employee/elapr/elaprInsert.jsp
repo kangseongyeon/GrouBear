@@ -27,13 +27,6 @@
    </div>
 </div>
 
-<%-- <c:set value="등록" var="insertAndUpdate"/>
-<c:set value="취소" var="cancleAndList"/>
-<c:set value="등록" var="insertAndUpdate"/>
-<c:if test="${status eq 'u' }">
-   <c:set value="수정" var="insertAndUpdate"/>
-   <c:set value="목록" var="cancleAndList"/>
-</c:if> --%>
 <c:set value="결재요청" var="stts"/>
 <c:if test="${status eq 'u' }">
 	<c:set value="결재재요청" var="stts"/>
@@ -72,16 +65,10 @@
 			                                               		<h2><font style="vertical-align: inherit;" class="me-4"><font style="vertical-align: inherit;">상신취소</font></font></h2>
 			                                               	</c:if>
 			                                               	
-			                                               	<button type="button" class="btn btn-flex btn-light-primary me-2 px-4 " data-bs-toggle="modal" data-bs-target="#modal_add_addrBook"><i class="bi bi-person-check">결재정보</i></button>
 			                                               	<c:if test="${status eq 'i'}">
+			                                               		<button type="button" class="btn btn-flex btn-light-primary me-2 px-4 " data-bs-toggle="modal" data-bs-target="#modal_add_addrBook"><i class="bi bi-person-check">결재정보</i></button>
 			                                               		<button id="formCallJstree" type="button" class="btn btn-flex btn-light-success me-1 px-4" data-bs-toggle="modal" data-bs-target="#formCall1"><i class="bi bi-card-checklist">양식 불러오기</i></button>
 			                                               	</c:if>
-			                                               	<%-- <button type="button" id="cancleBtn" class="btn btn-outline-secondary me-2"><i class="bi bi-x-circle">취소</i></button>
-			                                               	<button type="button" id="previewBtn2" class="btn btn-outline-secondary me-2"><i class="bi bi-eye">미리보기</i></button>
-			                                               	<c:if test="${status eq 'u' }">
-			                                               		<button type="button" id="delBtn" class="btn btn-outline-secondary me-2"><i class="bi bi-trash">삭제</i></button>
-			                                               	</c:if>
-			                                               	<button type="button" id="" class="btn btn-outline-secondary me-2"  data-bs-toggle="modal"  data-bs-target="#reqElapr"><i class="bi bi-pencil-square">결재요청</i></button> --%>
 		                                               </div>
 		                                               
 		                                               
@@ -311,15 +298,9 @@
 																<c:when test="${status ne 'i' }">
 																<sec:authentication property="principal.member" var="emp"/>
 																	<c:if test="${emp.empId eq formVO.empId}">
-																		<!-- <button id="formCallJstree" type="button" class="btn btn-light-info ms-2" data-bs-toggle="modal" data-bs-target="#formCall1">
-																		 	 양식 불러오기
-																		</button> -->
 																	</c:if>
 																</c:when>
 																<c:otherwise>
-																	<!-- <button id="formCallJstree" type="button" class="btn btn-light-info ms-2" data-bs-toggle="modal" data-bs-target="#formCall1">
-																	 	 양식 불러오기
-																	</button> -->
 																</c:otherwise>
 															</c:choose>
 														</div>

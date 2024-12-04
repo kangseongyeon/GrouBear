@@ -219,12 +219,12 @@ public class EmpElaprController {
         String currentDt = today.format(formatter);
         String empJncmpYmd = employeeAllVO.getEmpJncmpYmd().substring(0, 10);
 //        String empRsgntnYmd = employeeAllVO.getEmpRsgntnYmd().substring(0, 10);
-//        String elaprBgngDt = employeeAllVO.getElaprBgngDt().substring(0, 10);
+        String elaprBgngDt = employeeAllVO.getElaprBgngDt().substring(0, 10);
         
         employeeAllVO.setCurrentDt(currentDt);
         employeeAllVO.setEmpJncmpYmd(empJncmpYmd);
 //        employeeAllVO.setEmpRsgntnYmd(empRsgntnYmd);
-//        employeeAllVO.setElaprBgngDt(elaprBgngDt);
+        employeeAllVO.setElaprBgngDt(elaprBgngDt);
         
 		
 		return new ResponseEntity<EmployeeAllVO>(employeeAllVO, HttpStatus.OK);

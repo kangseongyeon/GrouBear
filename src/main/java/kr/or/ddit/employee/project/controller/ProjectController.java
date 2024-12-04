@@ -148,13 +148,13 @@ public class ProjectController {
 		model.addAttribute("teamList", teamList);
 		
 		// 발표 - 하드코딩
-		ProjectVO projectVO = new ProjectVO();
-		projectVO.setProNm("채팅 및 고객 지원 시스템 개선 프로젝트");
-		projectVO.setProCn("고객이 실시간으로 상담을 받을 수 있도록 채팅 및 고객 지원 시스템을 개선하는 프로젝트");
-		projectVO.setProStartDt("2024-11-18T13:00");
-		projectVO.setProEndDt("2024-11-24T15:00");
+//		ProjectVO projectVO = new ProjectVO();
+//		projectVO.setProNm("채팅 및 고객 지원 시스템 개선 프로젝트");
+//		projectVO.setProCn("고객이 실시간으로 상담을 받을 수 있도록 채팅 및 고객 지원 시스템을 개선하는 프로젝트");
+//		projectVO.setProStartDt("2024-11-18T13:00");
+//		projectVO.setProEndDt("2024-11-24T15:00");
 		
-		model.addAttribute("projectVO", projectVO);
+//		model.addAttribute("projectVO", projectVO);
 
 		log.info("companyVO : " + companyVO.getCeoId());
 		

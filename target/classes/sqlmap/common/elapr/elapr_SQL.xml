@@ -179,8 +179,6 @@
 	</update>
 	
 	<!-- 전자결재 신청 -->
-	<!-- <insert id="elaprInsert" parameterType="kr.or.ddit.comm.elapr.vo.ElaprVO" useGeneratedKeys="true" keyProperty="elaprNo">
-		<selectKey keyProperty="elaprNo" resultType="int" order="BEFORE"> -->
 	<insert id="elaprInsert" parameterType="kr.or.ddit.comm.elapr.vo.ElaprVO" useGeneratedKeys="true">
 		<selectKey keyProperty="elaprNo" resultType="int" order="BEFORE">
 			select seq_electronic_approval.nextval from dual
@@ -431,80 +429,6 @@
 		    AND  apln_stts_cd IN ('APLN002', 'APLN003')
 	</select>
 	 
-	 
-	 <select id="atchFileDetailOneSelect" parameterType="String" resultType="kr.or.ddit.comm.file.vo.AtchFileDetailVO">
-		SELECT atch_file_detail_cd
-		   ,atch_file_cd
-		   ,atch_file_detail_path_nm
-		   ,atch_file_detail_extn_nm
-		   ,atch_file_detail_size
-		   ,atch_file_detail_fancysize
-		   ,atch_file_detail_orgnl_nm
-		   ,atch_file_detail_strg_nm
-		   ,atch_file_detail_reg_dt
-		   ,emp_id
-		   ,atch_file_detail_del_yn
-		FROM atch_file_detail
-		WHERE atch_file_detail_cd = #{atchFileDetailCd}
-	 </select>
-	 
-	 <select id="atchFileDetailListSelect" parameterType="String" resultType="kr.or.ddit.comm.file.vo.AtchFileDetailVO">
-	 	SELECT atch_file_detail_cd
-		   ,atch_file_cd
-		   ,atch_file_detail_path_nm
-		   ,atch_file_detail_extn_nm
-		   ,atch_file_detail_size
-		   ,atch_file_detail_fancysize
-		   ,atch_file_detail_orgnl_nm
-		   ,atch_file_detail_strg_nm
-		   ,atch_file_detail_reg_dt
-		   ,emp_id
-		   ,atch_file_detail_del_yn
-		FROM atch_file_detail
-		WHERE atch_file_cd = #{atchFileCd} and
-		      atch_file_detail_del_yn = 'N'
-	 </select>
-	 
-	 <!-- 파일 그룹 등록하기 -->
-	<insert id="atchFileInsert" parameterType="kr.or.ddit.comm.elapr.vo.ElaprVO">
-		<selectKey keyProperty="atchFileCd" order="BEFORE" resultType="String">
-			select 'ELAPR' || SEQ_ATCH_FILE_CD.nextval from dual
-		</selectKey>
-		INSERT INTO atch_file (
-		    atch_file_cd
-		   ,emp_id
-		) VALUES (
-		    #{atchFileCd}
-		   ,#{empId}
-		)
-	</insert>
-	
-	<!-- 개별 파일 등록하기 -->
-	<insert id="fileDetailInsert" parameterType="kr.or.ddit.comm.file.vo.AtchFileDetailVO">
-		INSERT INTO atch_file_detail (
-		    atch_file_detail_cd
-		   ,atch_file_cd
-		   ,atch_file_detail_path_nm
-		   ,atch_file_detail_extn_nm
-		   ,atch_file_detail_size
-		   ,atch_file_detail_fancysize
-		   ,atch_file_detail_orgnl_nm
-		   ,atch_file_detail_strg_nm
-		   ,emp_id
-		) VALUES (
-		    'ELAPRCD' || SEQ_ATCH_FILE_DETAIL_CD.nextval
-		   ,#{atchFileCd}
-		   ,#{atchFileDetailPathNm}
-		   ,#{atchFileDetailExtnNm}
-		   ,#{atchFileDetailSize}
-		   ,#{atchFileDetailFancysize}
-		   ,#{atchFileDetailOrgnlNm}
-		   ,#{atchFileDetailStrgNm}
-		   ,#{empId}
-		)
-	</insert>
-	
-	
 	<!-- 결재선 리스트 조회 -->
 	<select id="getApprovalLineByElaprNo" parameterType="int" resultType="kr.or.ddit.comm.elapr.vo.AplnVO">
 	    SELECT
