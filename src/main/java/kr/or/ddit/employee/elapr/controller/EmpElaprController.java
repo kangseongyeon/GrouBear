@@ -278,10 +278,10 @@ public class EmpElaprController {
 		model.addAttribute("status", "i");
 		
 		// 발표용 하드코딩
-		ElaprVO elaprVO = new ElaprVO();
-		elaprVO.setElaprNm("사용자 로그 생성 프로젝트");
-		
-		model.addAttribute("elaprVO", elaprVO);
+//		ElaprVO elaprVO = new ElaprVO();
+//		elaprVO.setElaprNm("사용자 로그 생성 프로젝트");
+//		
+//		model.addAttribute("elaprVO", elaprVO);
 		
 		return "employee/elapr/elaprInsert";
 	}      

@@ -22,15 +22,6 @@
 									<div class="d-flex flex-column">
 										<div class="d-flex align-items-center mb-1">
 											<h3 class="me-2">${projectVO.proNm }</h3>
-											<%-- <c:if test="${projectVO.proSttsCd eq 'PRO001'}">
-												<span class="badge text-bg-primary">대기</span>
-											</c:if>
-											<c:if test="${projectVO.proSttsCd eq 'PRO002'}">
-												<span class="badge text-bg-warning">진행</span>
-											</c:if>
-											<c:if test="${projectVO.proSttsCd eq 'PRO003'}">
-												<span class="badge text-bg-success">완료</span>
-											</c:if> --%>
 										</div>
 									</div>
 									<div class="d-flex mb-4">
@@ -67,14 +58,6 @@
 											<div class="fw-semibold fs-6 text-gray-500">프로젝트 종료일</div>
 										</div>
 									</div>
-									<!-- <div class="symbol-group symbol-hover mb-3">
-				                         <div class="symbol symbol-35px symbol-circle" data-bs-toggle="tooltip" title="임윤아">
-											<img alt="임윤아" src="https://search.pstatic.net/common/?src=http%3A%2F%2Fimgnews.naver.net%2Fimage%2F5090%2F2022%2F09%2F15%2F0002164136_001_20220915113004061.jpg&type=sc960_832" />
-										</div>
-				                         <div class="symbol symbol-35px symbol-circle" data-bs-toggle="tooltip" title="김태연">
-											<img alt="김태연" src="https://lh3.googleusercontent.com/proxy/fFQCA6eJ35atPiMLgUbdH0vCSNw_dV82N7E0-dlQW_ZRCCDoHYXVaj1jMXc9K1o47txHtJZlFMyrqg47OEvRhiSV6fqPm5H7uRjDFTi50JM6" />
-										</div>
-									</div> -->
 									<div class="d-flex flex-stack flex-wrap mb-2">
 									    <div class="symbol-group symbol-hover my-1">
 									        <c:forEach items="${projectTaskVO.participantImgFileUrlsList}" var="participantImgFileUrl" varStatus="status">
